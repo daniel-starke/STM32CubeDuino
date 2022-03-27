@@ -1,0 +1,93 @@
+name: STM32Cube Framework Compatibility Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        include:
+          - series: "f0"
+            arch: "cortex-m0"
+            mcu: "stm32f072vbt6"
+          - series: "f1"
+            arch: "cortex-m3"
+            mcu: "stm32f103c8t6"
+          - series: "f2"
+            arch: "cortex-m3"
+            mcu: "stm32f207zet6"
+          - series: "f3"
+            arch: "cortex-m4"
+            mcu: "stm32f303cct6"
+          - series: "f4"
+            arch: "cortex-m4"
+            mcu: "stm32f401ccu6"
+          - series: "f7"
+            arch: "cortex-m7"
+            mcu: "stm32f730r8t6"
+          - series: "g4"
+            arch: "cortex-m4"
+            mcu: "stm32g473cbt6"
+          - series: "h7"
+            arch: "cortex-m7"
+            mcu: "stm32h743vit6"
+          - series: "l0"
+            arch: "cortex-m0plus"
+            mcu: "stm32l053r8t6"
+          - series: "l1"
+            arch: "cortex-m3"
+            mcu: "stm32l152rbt6"
+          - series: "l4"
+            arch: "cortex-m4"
+            mcu: "stm32l432kcu6"
+          - series: "l5"
+            arch: "cortex-m33"
+            mcu: "stm32l552cct6"
+
+# Once support was added:
+# SERIES="g0" ARCH="cortex-m0plus" MCU="stm32g030c8t6"
+# SERIES="mp1" ARCH="cortex-m4" MCU="stm32mp151aab3"
+# SERIES="u5" ARCH="cortex-m33" MCU="stm32u575rit6"
+# SERIES="wb" ARCH="cortex-m4" MCU="stm32wb55cgu6"
+# SERIES="wl" ARCH="cortex-m4" MCU="stm32wle5jci6"
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Cache pip
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: Cache PlatformIO
+      uses: actions/cache@v2
+      with:
+        path: ~/.platformio
+        key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+
+    - name: Install PlatformIO
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade platformio
+        pio update
+
+    - name: Run PlatformIO Tests
+      run: |
+        cp -pr etc/test .
+        chmod ugo+x test/build.sh
+        test/build.sh
+        rm -rf test
+      env:
+        SERIES: ${{ matrix.series }}
+        ARCH: ${{ matrix.arch }}
+        MCU: ${{ matrix.mcu }}
