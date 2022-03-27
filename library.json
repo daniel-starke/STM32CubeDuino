@@ -1,0 +1,21 @@
+{
+	"name": "stm32cubeduino",
+	"version": "1.0.0",
+	"description": "Port of the Arduino API for the STM32 Cube framework.",
+	"keywords": "arduino, stm32, stm32cube, stm32cubeduino",
+	"platforms": "ststm32",
+	"frameworks": "stm32cube",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/daniel-starke/STM32CubeDuino.git"
+	},
+	"authors": {
+		"name": "Daniel Starke",
+		"url": "https://github.com/daniel-starke/",
+		"maintainer": true
+	},
+	"build": {
+		"flags": "-Wall -Wextra -Wformat -pedantic -Wshadow -Wconversion -Wparentheses -Wunused -Wno-missing-field-initializers -std=c++14",
+		"extraScript": "BuildScript.py"
+	}
+}

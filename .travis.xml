@@ -1,0 +1,40 @@
+language: python
+python:
+ - "3.9"
+
+# Cache PlatformIO packages using Travis CI container-based infrastructure
+sudo: false
+cache:
+ directories:
+  - "~/.platformio"
+  - $HOME/.cache/pip
+
+install:
+ - pip install -U platformio
+ - pio update
+
+env:
+ - SERIES="f0" ARCH="cortex-m0" MCU="stm32f072vbt6"
+ - SERIES="f1" ARCH="cortex-m3" MCU="stm32f103c8t6"
+ - SERIES="f2" ARCH="cortex-m3" MCU="stm32f207zet6"
+ - SERIES="f3" ARCH="cortex-m4" MCU="stm32f303cct6"
+ - SERIES="f4" ARCH="cortex-m4" MCU="stm32f401ccu6"
+ - SERIES="f7" ARCH="cortex-m7" MCU="stm32f730r8t6"
+ - SERIES="g4" ARCH="cortex-m4" MCU="stm32g473cbt6"
+ - SERIES="h7" ARCH="cortex-m7" MCU="stm32h743vit6"
+ - SERIES="l0" ARCH="cortex-m0plus" MCU="stm32l053r8t6"
+ - SERIES="l1" ARCH="cortex-m3" MCU="stm32l152rbt6"
+ - SERIES="l4" ARCH="cortex-m4" MCU="stm32l432kcu6"
+ - SERIES="l5" ARCH="cortex-m33" MCU="stm32l552cct6"
+# - SERIES="g0" ARCH="cortex-m0plus" MCU="stm32g030c8t6"
+# - SERIES="mp1" ARCH="cortex-m4" MCU="stm32mp151aab3"
+# - SERIES="u5" ARCH="cortex-m33" MCU="stm32u575rit6"
+# - SERIES="wb" ARCH="cortex-m4" MCU="stm32wb55cgu6"
+# - SERIES="wl" ARCH="cortex-m4" MCU="stm32wle5jci6"
+
+before_script:
+ - cp -pr etc/test .
+ - chmod ugo+x test/build.sh
+
+script:
+ - test/build.sh

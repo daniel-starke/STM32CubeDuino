@@ -1,0 +1,36 @@
+{
+	"build": {
+		"core": "stm32",
+		"cpu": "cortex-m3",
+		"mcu": "stm32f103c8t6",
+		"product_line": "STM32F103xB",
+		"extra_flags": "-DUSB_VID=0x2341 -DUSB_PID=0x8036"
+	},
+	"debug": {
+		"default_tools": [
+			"stlink"
+		],
+		"jlink_device": "STM32F103C8",
+		"onboard_tools": [
+			"stlink"
+		],
+		"openocd_target": "stm32f1x",
+		"svd_path": "STM32F103xx.svd"
+	},
+	"frameworks": "stm32cube",
+	"name": "bluepill",
+	"upload": {
+		"maximum_ram_size": 20480,
+		"maximum_size": 65536,
+		"protocol": "stlink",
+		"protocols": [
+			"jlink",
+			"stlink",
+			"blackmagic",
+			"serial",
+			"mbed"
+		]
+	},
+	"url": "https://stm32-base.org/boards/STM32F103C8T6-Blue-Pill.html",
+	"vendor": "Generic"
+}
