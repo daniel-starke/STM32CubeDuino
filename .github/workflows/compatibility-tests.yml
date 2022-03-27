@@ -8,10 +8,9 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest]
         include:
           - series: "f0"
             arch: "cortex-m0"
