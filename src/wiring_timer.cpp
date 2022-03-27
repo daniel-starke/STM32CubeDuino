@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-10-21
- * @version 2022-03-25
+ * @version 2022-03-27
  */
 #include "Arduino.h"
 #include "scdinternal/macro.h"
@@ -2008,7 +2008,9 @@ _TimerPinMap::ClockSource _TimerPinMap::getClockSource(const uint16_t instNum) {
 		switch (instNum) {
 #ifdef RCC_PERIPHCLK_LPTIM1
 		case 25: /* LPTIM1 */
-			switch (__HAL_RCC_GET_LPTIM1_SOURCE()) {
+		{
+			const uint32_t source = __HAL_RCC_GET_LPTIM1_SOURCE();
+			switch (source) {
 #ifdef RCC_LPTIM1CLKSOURCE_CLKP
 			case RCC_LPTIM1CLKSOURCE_CLKP:    res = ClockSource_CLKP; break;
 #endif /* RCC_LPTIM1CLKSOURCE_CLKP */
@@ -2027,11 +2029,6 @@ _TimerPinMap::ClockSource _TimerPinMap::getClockSource(const uint16_t instNum) {
 #ifdef RCC_LPTIM1CLKSOURCE_LSI
 			case RCC_LPTIM1CLKSOURCE_LSI:     res = ClockSource_LSI; break;
 #endif /* RCC_LPTIM1CLKSOURCE_LSI */
-#ifdef RCC_LPTIM1CLKSOURCE_PCLK1
-#if !defined(RCC_LPTIM1CLKSOURCE_D2PCLK1) || RCC_LPTIM1CLKSOURCE_PCLK1 != RCC_LPTIM1CLKSOURCE_D2PCLK1
-			case RCC_LPTIM1CLKSOURCE_PCLK1:   res = ClockSource_PCLK1; break;
-#endif
-#endif /* RCC_LPTIM1CLKSOURCE_PCLK1 */
 #ifdef RCC_LPTIM1CLKSOURCE_PCLK2
 			case RCC_LPTIM1CLKSOURCE_PCLK2:   res = ClockSource_PCLK2; break;
 #endif /* RCC_LPTIM1CLKSOURCE_PCLK2 */
@@ -2047,13 +2044,23 @@ _TimerPinMap::ClockSource _TimerPinMap::getClockSource(const uint16_t instNum) {
 #ifdef RCC_LPTIM1CLKSOURCE_PLL3
 			case RCC_LPTIM1CLKSOURCE_PLL3:    res = ClockSource_PLL3; break;
 #endif /* RCC_LPTIM1CLKSOURCE_PLL3 */
-			default: break;
+			default:
+				/* Handle possible multiple define case for a single value. */
+#ifdef RCC_LPTIM1CLKSOURCE_PCLK1
+				if (source == RCC_LPTIM1CLKSOURCE_PCLK1) {
+					res = ClockSource_PCLK1;
+				}
+#endif /* RCC_LPTIM1CLKSOURCE_PCLK1 */
+				break;
 			}
 			break;
+		}
 #endif /* RCC_PERIPHCLK_LPTIM1 */
 #ifdef RCC_PERIPHCLK_LPTIM2
 		case 26: /* LPTIM2 */
-			switch (__HAL_RCC_GET_LPTIM2_SOURCE()) {
+		{
+			const uint32_t source = __HAL_RCC_GET_LPTIM2_SOURCE();
+			switch (source) {
 #ifdef RCC_LPTIM2CLKSOURCE_CLKP
 			case RCC_LPTIM2CLKSOURCE_CLKP:    res = ClockSource_CLKP; break;
 #endif /* RCC_LPTIM2CLKSOURCE_CLKP */
@@ -2081,26 +2088,31 @@ _TimerPinMap::ClockSource _TimerPinMap::getClockSource(const uint16_t instNum) {
 #ifdef RCC_LPTIM2CLKSOURCE_PCLK3
 			case RCC_LPTIM2CLKSOURCE_PCLK3:   res = ClockSource_PCLK3; break;
 #endif /* RCC_LPTIM2CLKSOURCE_PCLK3 */
-#ifdef RCC_LPTIM2CLKSOURCE_PCLK4
-#if !defined(RCC_LPTIM2CLKSOURCE_D3PCLK1) || RCC_LPTIM2CLKSOURCE_PCLK4 != RCC_LPTIM2CLKSOURCE_D3PCLK1
-			case RCC_LPTIM2CLKSOURCE_PCLK4:   res = ClockSource_PCLK4; break;
-#endif
-#endif /* RCC_LPTIM2CLKSOURCE_PCLK4 */
 #ifdef RCC_LPTIM2CLKSOURCE_PLL2
 			case RCC_LPTIM2CLKSOURCE_PLL2:    res = ClockSource_PLL2; break;
 #endif /* RCC_LPTIM2CLKSOURCE_PLL2 */
 #ifdef RCC_LPTIM2CLKSOURCE_PLL3
 			case RCC_LPTIM2CLKSOURCE_PLL3:    res = ClockSource_PLL3; break;
 #endif /* RCC_LPTIM2CLKSOURCE_PLL3 */
-			default: break;
+			default:
+				/* Handle possible multiple define case for a single value. */
+#ifdef RCC_LPTIM2CLKSOURCE_PCLK4
+				if (source == RCC_LPTIM2CLKSOURCE_PCLK4) {
+					res = ClockSource_PCLK4;
+				}
+#endif /* RCC_LPTIM2CLKSOURCE_PCLK4 */
+				break;
 			}
 			break;
+		}
 #endif /* RCC_PERIPHCLK_LPTIM2 */
 #ifdef RCC_PERIPHCLK_LPTIM345
 		case 27: /* LPTIM3 */
 		case 28: /* LPTIM4 */
 		case 29: /* LPTIM5 */
-			switch (__HAL_RCC_GET_LPTIM345_SOURCE()) {
+		{
+			const uint32_t source = __HAL_RCC_GET_LPTIM345_SOURCE();
+			switch (source) {
 #ifdef RCC_LPTIM345CLKSOURCE_CLKP
 			case RCC_LPTIM345CLKSOURCE_CLKP:    res = ClockSource_CLKP; break;
 #endif /* RCC_LPTIM345CLKSOURCE_CLKP */
@@ -2128,20 +2140,23 @@ _TimerPinMap::ClockSource _TimerPinMap::getClockSource(const uint16_t instNum) {
 #ifdef RCC_LPTIM345CLKSOURCE_PCLK3
 			case RCC_LPTIM345CLKSOURCE_PCLK3:   res = ClockSource_PCLK3; break;
 #endif /* RCC_LPTIM345CLKSOURCE_PCLK3 */
-#ifdef RCC_LPTIM345CLKSOURCE_PCLK4
-#if !defined(RCC_LPTIM2CLKSOURCE_D3PCLK1) || RCC_LPTIM345CLKSOURCE_PCLK4 != RCC_LPTIM2CLKSOURCE_D3PCLK1
-			case RCC_LPTIM345CLKSOURCE_PCLK4:   res = ClockSource_PCLK4; break;
-#endif
-#endif /* RCC_LPTIM345CLKSOURCE_PCLK4 */
 #ifdef RCC_LPTIM345CLKSOURCE_PLL2
 			case RCC_LPTIM345CLKSOURCE_PLL2:    res = ClockSource_PLL2; break;
 #endif /* RCC_LPTIM345CLKSOURCE_PLL2 */
 #ifdef RCC_LPTIM345CLKSOURCE_PLL3
 			case RCC_LPTIM345CLKSOURCE_PLL3:    res = ClockSource_PLL3; break;
 #endif /* RCC_LPTIM345CLKSOURCE_PLL3 */
-			default: break;
+			default:
+				/* Handle possible multiple define case for a single value. */
+#ifdef RCC_LPTIM345CLKSOURCE_PCLK4
+				if (source == RCC_LPTIM345CLKSOURCE_PCLK4) {
+					res = ClockSource_PCLK4;
+				}
+#endif /* RCC_LPTIM345CLKSOURCE_PCLK4 */
+				break;
 			}
 			break;
+		}
 #else /* not RCC_PERIPHCLK_LPTIM345 */
 #ifdef RCC_PERIPHCLK_LPTIM3
 		case 27: /* LPTIM3 */
