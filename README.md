@@ -70,7 +70,7 @@ Done
 - [ ] add support for STM32U5 (needs [PlatformIO support](https://github.com/platformio/platform-ststm32/issues/439))
 - [ ] add support for STM32WL (needs [PlatformIO support](https://github.com/platformio/platform-ststm32/issues/439))
 - [ ] add support for STM32WB (needs [PlatformIO support](https://github.com/platformio/platform-ststm32/issues/439))
-- [ ] GitHub Release
+- [x] GitHub Release
 
 Special Macros
 ==============

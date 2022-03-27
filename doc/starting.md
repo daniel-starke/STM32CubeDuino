@@ -44,8 +44,8 @@ build_flags = -Wall -Wextra -Wformat -pedantic -Wshadow -Wconversion -Wparenthes
 [env:bluepill]
 platform = ststm32
 platform_packages = toolchain-gccarmnoneeabi@1.90201.191206
-lib_deps = https://github.com/daniel-starke/stm32cubeduino.git
 framework = stm32cube
+lib_deps = https://github.com/daniel-starke/STM32CubeDuino/archive/refs/heads/main.zip
 board = bluepill
 build_flags = -fno-strict-aliasing -I${PROJECTSRC_DIR}/bluepill -DNO_GPL
 src_build_flags = ${common.build_flags}

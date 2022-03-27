@@ -3,7 +3,7 @@
 @author Daniel Starke
 @copyright Copyright 2020-2022 Daniel Starke
 @date 2020-10-20
-@version 2022-03-20
+@version 2022-03-27
 """
 
 import os
@@ -1630,7 +1630,7 @@ def getSvdFile(mcu, warn = False):
 						return list(mapping)[-1]
 		except IOError:
 			if warn:
-				print >>sys.stderr, "Warning: SVD file name list file not found: " + svdMapPath
+				print("Warning: SVD file name list file not found: " + svdMapPath, file=sys.stderr)
 	return None
 
 
