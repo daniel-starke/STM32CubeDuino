@@ -1,6 +1,8 @@
 STM32CubeDuino
 ==============
 
+[![STM32Cube Framework Compatibility Tests](https://github.com/daniel-starke/STM32CubeDuino/actions/workflows/compatibility-tests.yml/badge.svg?branch=main)](https://github.com/daniel-starke/STM32CubeDuino/actions/workflows/compatibility-tests.yml)
+
 Port of the Arduino API based on the STM32 Cube framework.
 
 This library aims to provide high compatibility to the original Arduino AVR framework, or at least  
