@@ -1,3 +1,10 @@
+/**
+ * @file mcu.cpp
+ * @author Daniel Starke
+ * @copyright Copyright 2022 Daniel Starke
+ * @date 2022-03-28
+ * @version 2022-03-28
+ */
 #include <Arduino.h>
 
 #define SIZE_IN_MB 1
