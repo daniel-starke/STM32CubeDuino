@@ -1,9 +1,9 @@
 #!/bin/gawk -f
 # @file _irqGenerate.awk
 # @author Daniel Starke
-# @copyright Copyright 2020 Daniel Starke
+# @copyright Copyright 2020-2022 Daniel Starke
 # @date 2020-11-14
-# @version 2020-11-20
+# @version 2022-04-03
 #
 # STM32CubeIDE\STM32CubeIDE\plugins\com.st.stm32cube.common.mx_6.0.1.202008101643\db\mcu\IP
 # grep -hr _IRQn NVIC* | sort -u | CXX_OUT="wiring_irq.cpp" H_OUT="wiring_irq.h" ./_irqGenerate.awk
@@ -55,28 +55,51 @@ function cmpNatural(i1, v1, i2, v2) {
 }
 
 function outputCondIfDef(insts, output) {
-	if (insts ~ /,EXTI[0-9]*,/) return
 	_list = ","
 	for (_k in usedIrqMap) {
 		if (insts ~ "," _k "[0-9]*," && _list !~ "," usedIrqMap[_k] ",") {
 			_list = _list usedIrqMap[_k] ","
 		}
 	}
+	_disableList = ","
+	for (_k in disableIrqMap) {
+		if (insts ~ "," _k "[0-9]*," && _disableList !~ "," disableIrqMap[_k] ",") {
+			_disableList = _disableList disableIrqMap[_k] ","
+		}
+	}
 	if (_list == ",") {
-		printf("#ifdef STM32CUBEDUINO_MAP_ALL_IRQS\n") >> output
+		if (_disableList == ",") {
+			printf("#ifdef STM32CUBEDUINO_MAP_ALL_IRQS\n") >> output
+		} else {
+			delete _disableListAry
+			_disableCount = split(_disableList, _disableListAry, ",")
+			printf("#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (") >> output
+			for (_j = 2; _j < _disableCount; _j++) {
+				if (_j != 2) printf(" && ") >> output
+				printf("!defined(%s)", _disableListAry[_j]) >> output
+			}
+			printf(")\n") >> output
+		}
 	} else {
 		delete _listAry
 		_count = split(_list, _listAry, ",")
 		printf("#if defined(STM32CUBEDUINO_MAP_ALL_IRQS)") >> output
 		for (_i = 2; _i < _count; _i++) {
-			printf(" || defined(%s)", _listAry[_i]) >> output
+			printf(" || (", _listAry[_i]) >> output
+			if (_disableList != ",") {
+				delete _disableListAry
+				_disableCount = split(_disableList, _disableListAry, ",")
+				for (_j = 2; _j < _disableCount; _j++) {
+					printf("!defined(%s) && ", _disableListAry[_j]) >> output
+				}
+			}
+			printf("defined(%s))", _listAry[_i]) >> output
 		}
 		printf("\n") >> output
 	}
 }
 
 function outputCondEndIf(insts, output) {
-	if (insts ~ /,EXTI[0-9]*,/) return
 	_list = ","
 	for (_k in usedIrqMap) {
 		if (insts ~ "," _k "[0-9]*," && _list !~ "," usedIrqMap[_k] ",") {
@@ -116,14 +139,18 @@ BEGIN {
 	printf("") > C
 	printf("") > H
 	# initialize maps/lists
+	# instance to interrupt line map
 	itLineMap["ADC"] = "ADC"
+	itLineMap["AES"] = "AES"
 	itLineMap["CAN"] = "CAN"
 	itLineMap["CEC"] = "CEC"
 	itLineMap["CLK_CTRL"] = "CLK_CTRL"
 	itLineMap["COMP1"] = "COMP1"
 	itLineMap["COMP2"] = "COMP2"
+	itLineMap["COMP3"] = "COMP3"
 	itLineMap["CRS"] = "CRS"
 	itLineMap["DAC"] = "DAC"
+	itLineMap["DMA"] = "DMAMUX1"
 	itLineMap["DMA1_CH1"] = "DMA1_CH1"
 	itLineMap["DMA1_CH2"] = "DMA1_CH2"
 	itLineMap["DMA1_CH3"] = "DMA1_CH3"
@@ -152,23 +179,36 @@ BEGIN {
 	itLineMap["EXTI13"] = "EXTI13"
 	itLineMap["EXTI14"] = "EXTI14"
 	itLineMap["EXTI15"] = "EXTI15"
-	itLineMap["FLASH"] = "FLASH"
+	itLineMap["FDCAN1"] = "FDCAN1_IT0,FDCAN1_IT1"
+	itLineMap["FDCAN2"] = "FDCAN2_IT0,FDCAN2_IT1"
+	itLineMap["FLASH"] = "FLASH_ECC,FLASH_ITF"
 	itLineMap["I2C1"] = "I2C1"
 	itLineMap["I2C2"] = "I2C2"
-	itLineMap["PWR"] = "PWR"
-	itLineMap["RTC"] = "RTC"
+	itLineMap["I2C3"] = "I2C3"
+	itLineMap["LPTIM1"] = "LPTIM1"
+	itLineMap["LPTIM2"] = "LPTIM2"
+	itLineMap["LPUART1"] = "LPUART1"
+	itLineMap["LPUART2"] = "LPUART2"
+	itLineMap["PWR"] = "PVDOUT,PVMOUT,VDDIO2"
+	itLineMap["RNG"] = "RNG"
+	itLineMap["RTC"] = "RTC,RTC_ALRA,RTC_TSTAMP,RTC_WAKEUP"
 	itLineMap["SPI1"] = "SPI1"
 	itLineMap["SPI2"] = "SPI2"
-	itLineMap["TIM1"] = "TIM1"
+	itLineMap["SPI3"] = "SPI3"
+	itLineMap["TAMPER"] = "TAMPER"
+	itLineMap["TIM1"] = "TIM1_BRK,TIM1_CC,TIM1_CCU,TIM1_TRG,TIM1_UPD"
 	itLineMap["TIM2"] = "TIM2"
 	itLineMap["TIM3"] = "TIM3"
+	itLineMap["TIM4"] = "TIM4"
 	itLineMap["TIM6"] = "TIM6"
 	itLineMap["TIM7"] = "TIM7"
 	itLineMap["TIM14"] = "TIM14"
 	itLineMap["TIM15"] = "TIM15"
 	itLineMap["TIM16"] = "TIM16"
 	itLineMap["TIM17"] = "TIM17"
-	itLineMap["TSC"] = "TSC"
+	itLineMap["TSC"] = "TSC_EOA,TSC_MCE"
+	itLineMap["UCPD1"] = "UCPD1"
+	itLineMap["UCPD2"] = "UCPD2"
 	itLineMap["USART1"] = "USART1"
 	itLineMap["USART2"] = "USART2"
 	itLineMap["USART3"] = "USART3"
@@ -177,10 +217,12 @@ BEGIN {
 	itLineMap["USART6"] = "USART6"
 	itLineMap["USART7"] = "USART7"
 	itLineMap["USART8"] = "USART8"
-	itLineMap["WWDG"] = "WWDG"
+	itLineMap["USB"] = "USB"
+	itLineMap["WWDG"] = "EWDG,WWDG"
 	for (i in itLineMap) {
 		instList[i] = i
 	}
+	ignTim1Map["TIM1_BRK_IRQn"] = "TIM1_BRK_IRQn"
 	ignTim1Map["TIM1_BRK_TIM9_IRQn"] = "TIM1_BRK_TIM9_IRQn"
 	ignTim1Map["TIM1_BRK_TIM15_IRQn"] = "TIM1_BRK_TIM15_IRQn"
 	ignTim1Map["TIM1_CC_IRQn"] = "TIM1_CC_IRQn"
@@ -190,6 +232,7 @@ BEGIN {
 	# conditional include map
 	usedIrqMap["ADC"] = "ADC_SOFTWARE_START"
 	usedIrqMap["DAC"] = "DAC_TRIGGER_NONE"
+	usedIrqMap["I2C"] = "IS_I2C_ADDRESSING_MODE"
 	usedIrqMap["LPTIM"] = "LPTIM_PRESCALER_DIV1"
 	usedIrqMap["LPUART"] = "IS_UART_MODE"
 	usedIrqMap["TIM"] = "TIM_CLOCKPRESCALER_DIV1"
@@ -197,6 +240,18 @@ BEGIN {
 	usedIrqMap["USART"] = "IS_UART_MODE"
 	usedIrqMap["USB"] = "PCD_PHY_EMBEDDED"
 	usedIrqMap["USB_OTG_FS"] = "PCD_PHY_EMBEDDED"
+	# disabling macros
+	disableIrqMap["ADC"] = "STM32CUBEDUINO_DISABLE_ADC"
+	disableIrqMap["DAC"] = "STM32CUBEDUINO_DISABLE_DAC"
+	disableIrqMap["EXTI"] = "STM32CUBEDUINO_DISABLE_EXTI"
+	disableIrqMap["I2C"] = "STM32CUBEDUINO_DISABLE_I2C"
+	disableIrqMap["LPTIM"] = "STM32CUBEDUINO_ENABLE_TIMER"
+	disableIrqMap["LPUART"] = "STM32CUBEDUINO_DISABLE_SERIAL"
+	disableIrqMap["TIM"] = "STM32CUBEDUINO_DISABLE_ALL_TIMERS"
+	disableIrqMap["UART"] = "STM32CUBEDUINO_DISABLE_SERIAL"
+	disableIrqMap["USART"] = "STM32CUBEDUINO_DISABLE_SERIAL"
+	disableIrqMap["USB"] = "STM32CUBEDUINO_DISABLE_USB"
+	disableIrqMap["USB_OTG_FS"] = "STM32CUBEDUINO_DISABLE_USB"
 }
 
 /PossibleValue/ {
@@ -259,12 +314,13 @@ BEGIN {
 END {
 	instListCount = asort(instList, instList, "cmpNatural")
 	irqListCount = asort(irqList, irqList, "cmpNatural")
+	itLineListCount = asorti(itLineMap, itLineList, "cmpNatural")
 	
 	# output header
 	printf("/**\n") >> H
 	printf(" * @file %s\n", basename(H)) >> H
 	printf(" * @author Daniel Starke\n") >> H
-	printf(" * @copyright Copyright 2020 Daniel Starke\n") >> H
+	printf(" * @copyright Copyright 2020-2022 Daniel Starke\n") >> H
 	printf(" * @date 2020-11-13\n") >> H
 	printf(" * @version %s\n", strftime("%Y-%m-%d")) >> H
 	printf(" * \n") >> H
@@ -347,7 +403,7 @@ END {
 	printf("	template <typename T> \\\n") >> H
 	printf("	static inline void clearNvicIrqFor##IRQn(decltype(T::IRQn) *) { \\\n") >> H
 	printf("		HAL_NVIC_ClearPendingIRQ(T::IRQn); \\\n") >> H
-	printf("		__ISB(); /* Ensure that the IRQ was really cleared. */ \\\n") >> H
+	printf("		__ISB(); /* Ensure that the IRQ was really cleared at this point. */ \\\n") >> H
 	printf("	} \\\n") >> H
 	printf("	template <typename T> \\\n") >> H
 	printf("	static inline void clearNvicIrqFor##IRQn(...) {}\n") >> H
@@ -387,7 +443,7 @@ END {
 	printf("/**\n") >> C
 	printf(" * @file %s\n", basename(C)) >> C
 	printf(" * @author Daniel Starke\n") >> C
-	printf(" * @copyright Copyright 2020 Daniel Starke\n") >> C
+	printf(" * @copyright Copyright 2020-2022 Daniel Starke\n") >> C
 	printf(" * @date 2020-11-13\n") >> C
 	printf(" * @version %s\n", strftime("%Y-%m-%d")) >> C
 	printf(" */\n") >> C
@@ -395,136 +451,33 @@ END {
 	printf("#include \"%s\"\n", basename(H)) >> C
 	printf("\n") >> C
 	printf("\n") >> C
-	printf("#ifdef __HAL_GET_PENDING_IT /* STM32F0 specific interrupt line handling. */\n") >> C
-	printf("#define ifIsPendingIrqForADC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_ADC) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForCAN() if (__HAL_GET_PENDING_IT(HAL_ITLINE_CAN) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForCEC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_CEC) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForCLK_CTRL() if (__HAL_GET_PENDING_IT(HAL_ITLINE_CLK_CTRL) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForCOMP1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_COMP1) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForCOMP2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_COMP2) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForCRS() if (__HAL_GET_PENDING_IT(HAL_ITLINE_CRS) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForDAC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DAC) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH1) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH2) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH3) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH4() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH4) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH5() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH5) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH6() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH6) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH7() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH7) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForDMA2_CH1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH1) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForDMA2_CH2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH2) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForDMA2_CH3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH3) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForDMA2_CH4() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH4) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForDMA2_CH5() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH5) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI0() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI0) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI1) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI2) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI3) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI4() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI4) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI5() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI5) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI6() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI6) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI7() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI7) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI8() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI8) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI9() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI9) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI10() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI10) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI11() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI11) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI12() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI12) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI13() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI13) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI14() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI14) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForEXTI15() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI15) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForFLASH() if (__HAL_GET_PENDING_IT(HAL_ITLINE_FLASH_ITF) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForI2C1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_I2C1) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForI2C2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_I2C2) != RESET)\n") >> C
-	printf("#ifdef HAL_ITLINE_PVDOUT\n") >> C
-	printf("#define ifIsPendingIrqForPWR() if (__HAL_GET_PENDING_IT(HAL_ITLINE_VDDIO2) != RESET || __HAL_GET_PENDING_IT(HAL_ITLINE_PVDOUT))\n") >> C
-	printf("#else /* not HAL_ITLINE_PVDOUT */\n") >> C
-	printf("#define ifIsPendingIrqForPWR() if (__HAL_GET_PENDING_IT(HAL_ITLINE_VDDIO2) != RESET)\n") >> C
-	printf("#endif /* not HAL_ITLINE_PVDOUT */\n") >> C
-	printf("#define ifIsPendingIrqForRTC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_RTC_WAKEUP) != RESET || __HAL_GET_PENDING_IT(HAL_ITLINE_RTC_TSTAMP) != RESET || __HAL_GET_PENDING_IT(HAL_ITLINE_RTC_ALRA) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForSPI1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_SPI1) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForSPI2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_SPI2) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForTIM1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM1) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForTIM2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM2) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForTIM3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM3) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForTIM6() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM6) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForTIM7() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM7) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForTIM14() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM14) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForTIM15() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM15) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForTIM16() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM16) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForTIM17() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM17) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForTSC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TSC_EOA) != RESET || __HAL_GET_PENDING_IT(HAL_ITLINE_TSC_MCE) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForUSART1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART1) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForUSART2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART2) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForUSART3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART3) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForUSART4() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART4) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForUSART5() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART5) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForUSART6() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART6) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForUSART7() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART7) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForUSART8() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART8) != RESET)\n") >> C
-	printf("#define ifIsPendingIrqForWWDG() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EWDG) != RESET)\n") >> C
+	printf("#if !defined(STM32CUBEDUINO_DISABLE_TIMER) || !defined(STM32CUBEDUINO_DISABLE_PWM)\n") >> C
+	printf("#undef STM32CUBEDUINO_DISABLE_ALL_TIMERS\n") >> C
+	printf("#else\n") >> C
+	printf("#define STM32CUBEDUINO_DISABLE_ALL_TIMERS\n") >> C
+	printf("#endif\n") >> C
+	printf("\n") >> C
+	printf("\n") >> C
+	printf("#ifdef __HAL_GET_PENDING_IT /* STM32F0 and STM32G0 specific interrupt line handling. */\n") >> C
+	for (i = 1; i <= itLineListCount; i++) {
+		delete valAry
+		valCount = split(itLineMap[itLineList[i]], valAry, ",")
+		for (j = 1; j <= valCount; j++) {
+			printf("#ifdef HAL_ITLINE_%s\n", valAry[j]) >> C
+			printf("#define ifIsPendingIrqFor%s() if (__HAL_GET_PENDING_IT(HAL_ITLINE_%s))\n", valAry[j], valAry[j]) >> C
+			printf("#else /* not HAL_ITLINE_%s */\n", valAry[j]) >> C
+			printf("#define ifIsPendingIrqFor%s() if ( false )\n", valAry[j]) >> C
+			printf("#endif /* not HAL_ITLINE_%s */\n", valAry[j]) >> C
+		}
+	}
 	printf("#else /* not __HAL_GET_PENDING_IT */\n") >> C
-	printf("#define ifIsPendingIrqForADC()\n") >> C
-	printf("#define ifIsPendingIrqForCAN()\n") >> C
-	printf("#define ifIsPendingIrqForCEC()\n") >> C
-	printf("#define ifIsPendingIrqForCLK_CTRL()\n") >> C
-	printf("#define ifIsPendingIrqForCOMP1()\n") >> C
-	printf("#define ifIsPendingIrqForCOMP2()\n") >> C
-	printf("#define ifIsPendingIrqForCRS()\n") >> C
-	printf("#define ifIsPendingIrqForDAC()\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH1()\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH2()\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH3()\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH4()\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH5()\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH6()\n") >> C
-	printf("#define ifIsPendingIrqForDMA1_CH7()\n") >> C
-	printf("#define ifIsPendingIrqForDMA2_CH1()\n") >> C
-	printf("#define ifIsPendingIrqForDMA2_CH2()\n") >> C
-	printf("#define ifIsPendingIrqForDMA2_CH3()\n") >> C
-	printf("#define ifIsPendingIrqForDMA2_CH4()\n") >> C
-	printf("#define ifIsPendingIrqForDMA2_CH5()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI0()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI1()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI2()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI3()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI4()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI5()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI6()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI7()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI8()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI9()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI10()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI11()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI12()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI13()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI14()\n") >> C
-	printf("#define ifIsPendingIrqForEXTI15()\n") >> C
-	printf("#define ifIsPendingIrqForFLASH()\n") >> C
-	printf("#define ifIsPendingIrqForI2C1()\n") >> C
-	printf("#define ifIsPendingIrqForI2C2()\n") >> C
-	printf("#define ifIsPendingIrqForPWR()\n") >> C
-	printf("#define ifIsPendingIrqForRTC()\n") >> C
-	printf("#define ifIsPendingIrqForSPI1()\n") >> C
-	printf("#define ifIsPendingIrqForSPI2()\n") >> C
-	printf("#define ifIsPendingIrqForTIM1()\n") >> C
-	printf("#define ifIsPendingIrqForTIM2()\n") >> C
-	printf("#define ifIsPendingIrqForTIM3()\n") >> C
-	printf("#define ifIsPendingIrqForTIM6()\n") >> C
-	printf("#define ifIsPendingIrqForTIM7()\n") >> C
-	printf("#define ifIsPendingIrqForTIM14()\n") >> C
-	printf("#define ifIsPendingIrqForTIM15()\n") >> C
-	printf("#define ifIsPendingIrqForTIM16()\n") >> C
-	printf("#define ifIsPendingIrqForTIM17()\n") >> C
-	printf("#define ifIsPendingIrqForTSC()\n") >> C
-	printf("#define ifIsPendingIrqForUSART1()\n") >> C
-	printf("#define ifIsPendingIrqForUSART2()\n") >> C
-	printf("#define ifIsPendingIrqForUSART3()\n") >> C
-	printf("#define ifIsPendingIrqForUSART4()\n") >> C
-	printf("#define ifIsPendingIrqForUSART5()\n") >> C
-	printf("#define ifIsPendingIrqForUSART6()\n") >> C
-	printf("#define ifIsPendingIrqForUSART7()\n") >> C
-	printf("#define ifIsPendingIrqForUSART8()\n") >> C
-	printf("#define ifIsPendingIrqForWWDG()\n") >> C
+	for (i = 1; i <= itLineListCount; i++) {
+		delete valAry
+		valCount = split(itLineMap[itLineList[i]], valAry, ",")
+		for (j = 1; j <= valCount; j++) {
+			printf("#define ifIsPendingIrqFor%s()\n", valAry[j]) >> C
+		}
+	}
 	printf("#endif /* not __HAL_GET_PENDING_IT */\n") >> C
 	printf("\n") >> C
 	printf("\n") >> C
@@ -572,7 +525,11 @@ END {
 		valCount = asort(valAry, valAry, "cmpNatural")
 		for (j = 1; j <= valCount; j++) {
 			if (valAry[j] in itLineMap) {
-				printf("	ifIsPendingIrqFor%s() STM32CubeDuinoIrqHandlerFor%s();\n", valAry[j], valAry[j]) >> C
+				delete valAry2
+				valCount2 = split(itLineMap[valAry[j]], valAry2, ",")
+				for (k = 1; k <= valCount2; k++) {
+					printf("	ifIsPendingIrqFor%s() STM32CubeDuinoIrqHandlerFor%s();\n", valAry2[k], valAry[j]) >> C
+				}
 			} else {
 				printf("	STM32CubeDuinoIrqHandlerFor%s();\n", valAry[j]) >> C
 			}

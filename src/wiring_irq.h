@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-11-13
- * @version 2022-03-25
+ * @version 2022-04-03
  * 
  * @internal For internal use only.
  */
@@ -664,8 +664,6 @@ __DEF_GET_IRQ(COMP3, COMP1_2_3_IRQn)
 
 __DEF_GET_IRQ(COMP2, COMP2_IRQn)
 
-__DEF_GET_IRQ(COMP3, COMP3_IRQn)
-
 __DEF_GET_IRQ(COMP4, COMP4_IRQn)
 
 __DEF_GET_IRQ(COMP4, COMP4_5_6_IRQn)
@@ -1187,8 +1185,6 @@ __DEF_GET_IRQ(TAMP, TAMP_S_IRQn)
 
 __DEF_GET_IRQ(TEMPSENS, TEMP_IRQn)
 
-// __DEF_GET_IRQ(TIM1, TIM1_BRK_IRQn)
-
 __DEF_GET_IRQ(TIM9, TIM1_BRK_TIM9_IRQn)
 
 __DEF_GET_IRQ(TIM15, TIM1_BRK_TIM15_IRQn)
@@ -1478,7 +1474,6 @@ __DEF_CLEAR_NVIC_IRQ(COMP_IRQn)
 __DEF_CLEAR_NVIC_IRQ(COMP1_2_IRQn)
 __DEF_CLEAR_NVIC_IRQ(COMP1_2_3_IRQn)
 __DEF_CLEAR_NVIC_IRQ(COMP2_IRQn)
-__DEF_CLEAR_NVIC_IRQ(COMP3_IRQn)
 __DEF_CLEAR_NVIC_IRQ(COMP4_IRQn)
 __DEF_CLEAR_NVIC_IRQ(COMP4_5_6_IRQn)
 __DEF_CLEAR_NVIC_IRQ(COMP4_6_IRQn)
@@ -2042,6 +2037,7 @@ extern void STM32CubeDuinoIrqHandlerForLPTIM3(void);
 extern void STM32CubeDuinoIrqHandlerForLPTIM4(void);
 extern void STM32CubeDuinoIrqHandlerForLPTIM5(void);
 extern void STM32CubeDuinoIrqHandlerForLPUART1(void);
+extern void STM32CubeDuinoIrqHandlerForLPUART2(void);
 extern void STM32CubeDuinoIrqHandlerForLTDC(void);
 extern void STM32CubeDuinoIrqHandlerForMDIOS(void);
 extern void STM32CubeDuinoIrqHandlerForMDMA(void);
@@ -2079,6 +2075,7 @@ extern void STM32CubeDuinoIrqHandlerForSPI4(void);
 extern void STM32CubeDuinoIrqHandlerForSPI5(void);
 extern void STM32CubeDuinoIrqHandlerForSPI6(void);
 extern void STM32CubeDuinoIrqHandlerForSWPMI1(void);
+extern void STM32CubeDuinoIrqHandlerForTAMPER(void);
 extern void STM32CubeDuinoIrqHandlerForTAMP(void);
 extern void STM32CubeDuinoIrqHandlerForTEMPSENS(void);
 extern void STM32CubeDuinoIrqHandlerForTIM1(void);

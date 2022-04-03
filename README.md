@@ -67,7 +67,6 @@ Done
 - [x] keywords.txt
 - [x] Example Board
 - [x] disabling macros
-- [ ] add support for STM32G0 (new pull request to make `RCC_GetSystemClockFreq()` public)
 - [ ] add support for STM32MP1 (needs [PlatformIO support](https://github.com/platformio/platform-ststm32/issues/439))
 - [ ] add support for STM32U5 (needs [PlatformIO support](https://github.com/platformio/platform-ststm32/issues/439))
 - [ ] add support for STM32WL (needs [PlatformIO support](https://github.com/platformio/platform-ststm32/issues/439))
@@ -194,7 +193,7 @@ Issues
 ======
 
 - periphery locking is not implemented for STM32MP1
-- handling of analog control register ASC0 is missing in pinModeEx()
+- handling of analog control register ASC0 is missing in `pinModeEx()`
 - `__HAL_LOCK()` is basically [broken](https://community.st.com/s/question/0D50X00009XkeOGSAZ/questions-surrounding-hallock) but [may be fixed](https://community.st.com/s/question/0D50X0000C5Tns8SQC/bug-stm32-hal-driver-lock-mechanism-is-not-interrupt-safe) in your version.
 - PWM output setup creates spikes (maybe due to `TIM_CCxChannelCmd(htim->Instance, Channel, TIM_CCx_ENABLE); /* Enable the Capture compare channel */`)
 

@@ -3,95 +3,497 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-11-13
- * @version 2022-03-11
+ * @version 2022-04-03
  */
 #include "Arduino.h"
 #include "wiring_irq.h"
 
 
 #if !defined(STM32CUBEDUINO_DISABLE_TIMER) || !defined(STM32CUBEDUINO_DISABLE_PWM)
-#define SCD_ENABLE_TIMER
+#undef STM32CUBEDUINO_DISABLE_ALL_TIMERS
 #else
-#undef SCD_ENABLE_TIMER
+#define STM32CUBEDUINO_DISABLE_ALL_TIMERS
 #endif
 
 
-#ifdef __HAL_GET_PENDING_IT /* STM32F0 specific interrupt line handling. */
-#define ifIsPendingIrqForADC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_ADC) != RESET)
-#define ifIsPendingIrqForCAN() if (__HAL_GET_PENDING_IT(HAL_ITLINE_CAN) != RESET)
-#define ifIsPendingIrqForCEC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_CEC) != RESET)
-#define ifIsPendingIrqForCLK_CTRL() if (__HAL_GET_PENDING_IT(HAL_ITLINE_CLK_CTRL) != RESET)
-#define ifIsPendingIrqForCOMP1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_COMP1) != RESET)
-#define ifIsPendingIrqForCOMP2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_COMP2) != RESET)
-#define ifIsPendingIrqForCRS() if (__HAL_GET_PENDING_IT(HAL_ITLINE_CRS) != RESET)
-#define ifIsPendingIrqForDAC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DAC) != RESET)
-#define ifIsPendingIrqForDMA1_CH1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH1) != RESET)
-#define ifIsPendingIrqForDMA1_CH2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH2) != RESET)
-#define ifIsPendingIrqForDMA1_CH3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH3) != RESET)
-#define ifIsPendingIrqForDMA1_CH4() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH4) != RESET)
-#define ifIsPendingIrqForDMA1_CH5() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH5) != RESET)
-#define ifIsPendingIrqForDMA1_CH6() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH6) != RESET)
-#define ifIsPendingIrqForDMA1_CH7() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH7) != RESET)
-#define ifIsPendingIrqForDMA2_CH1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH1) != RESET)
-#define ifIsPendingIrqForDMA2_CH2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH2) != RESET)
-#define ifIsPendingIrqForDMA2_CH3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH3) != RESET)
-#define ifIsPendingIrqForDMA2_CH4() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH4) != RESET)
-#define ifIsPendingIrqForDMA2_CH5() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH5) != RESET)
-#define ifIsPendingIrqForEXTI0() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI0) != RESET)
-#define ifIsPendingIrqForEXTI1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI1) != RESET)
-#define ifIsPendingIrqForEXTI2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI2) != RESET)
-#define ifIsPendingIrqForEXTI3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI3) != RESET)
-#define ifIsPendingIrqForEXTI4() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI4) != RESET)
-#define ifIsPendingIrqForEXTI5() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI5) != RESET)
-#define ifIsPendingIrqForEXTI6() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI6) != RESET)
-#define ifIsPendingIrqForEXTI7() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI7) != RESET)
-#define ifIsPendingIrqForEXTI8() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI8) != RESET)
-#define ifIsPendingIrqForEXTI9() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI9) != RESET)
-#define ifIsPendingIrqForEXTI10() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI10) != RESET)
-#define ifIsPendingIrqForEXTI11() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI11) != RESET)
-#define ifIsPendingIrqForEXTI12() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI12) != RESET)
-#define ifIsPendingIrqForEXTI13() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI13) != RESET)
-#define ifIsPendingIrqForEXTI14() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI14) != RESET)
-#define ifIsPendingIrqForEXTI15() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI15) != RESET)
-#define ifIsPendingIrqForFLASH() if (__HAL_GET_PENDING_IT(HAL_ITLINE_FLASH_ITF) != RESET)
-#define ifIsPendingIrqForI2C1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_I2C1) != RESET)
-#define ifIsPendingIrqForI2C2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_I2C2) != RESET)
+#ifdef __HAL_GET_PENDING_IT /* STM32F0 and STM32G0 specific interrupt line handling. */
+#ifdef HAL_ITLINE_ADC
+#define ifIsPendingIrqForADC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_ADC))
+#else /* not HAL_ITLINE_ADC */
+#define ifIsPendingIrqForADC() if ( false )
+#endif /* not HAL_ITLINE_ADC */
+#ifdef HAL_ITLINE_AES
+#define ifIsPendingIrqForAES() if (__HAL_GET_PENDING_IT(HAL_ITLINE_AES))
+#else /* not HAL_ITLINE_AES */
+#define ifIsPendingIrqForAES() if ( false )
+#endif /* not HAL_ITLINE_AES */
+#ifdef HAL_ITLINE_CAN
+#define ifIsPendingIrqForCAN() if (__HAL_GET_PENDING_IT(HAL_ITLINE_CAN))
+#else /* not HAL_ITLINE_CAN */
+#define ifIsPendingIrqForCAN() if ( false )
+#endif /* not HAL_ITLINE_CAN */
+#ifdef HAL_ITLINE_CEC
+#define ifIsPendingIrqForCEC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_CEC))
+#else /* not HAL_ITLINE_CEC */
+#define ifIsPendingIrqForCEC() if ( false )
+#endif /* not HAL_ITLINE_CEC */
+#ifdef HAL_ITLINE_CLK_CTRL
+#define ifIsPendingIrqForCLK_CTRL() if (__HAL_GET_PENDING_IT(HAL_ITLINE_CLK_CTRL))
+#else /* not HAL_ITLINE_CLK_CTRL */
+#define ifIsPendingIrqForCLK_CTRL() if ( false )
+#endif /* not HAL_ITLINE_CLK_CTRL */
+#ifdef HAL_ITLINE_COMP1
+#define ifIsPendingIrqForCOMP1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_COMP1))
+#else /* not HAL_ITLINE_COMP1 */
+#define ifIsPendingIrqForCOMP1() if ( false )
+#endif /* not HAL_ITLINE_COMP1 */
+#ifdef HAL_ITLINE_COMP2
+#define ifIsPendingIrqForCOMP2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_COMP2))
+#else /* not HAL_ITLINE_COMP2 */
+#define ifIsPendingIrqForCOMP2() if ( false )
+#endif /* not HAL_ITLINE_COMP2 */
+#ifdef HAL_ITLINE_COMP3
+#define ifIsPendingIrqForCOMP3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_COMP3))
+#else /* not HAL_ITLINE_COMP3 */
+#define ifIsPendingIrqForCOMP3() if ( false )
+#endif /* not HAL_ITLINE_COMP3 */
+#ifdef HAL_ITLINE_CRS
+#define ifIsPendingIrqForCRS() if (__HAL_GET_PENDING_IT(HAL_ITLINE_CRS))
+#else /* not HAL_ITLINE_CRS */
+#define ifIsPendingIrqForCRS() if ( false )
+#endif /* not HAL_ITLINE_CRS */
+#ifdef HAL_ITLINE_DAC
+#define ifIsPendingIrqForDAC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DAC))
+#else /* not HAL_ITLINE_DAC */
+#define ifIsPendingIrqForDAC() if ( false )
+#endif /* not HAL_ITLINE_DAC */
+#ifdef HAL_ITLINE_DMAMUX1
+#define ifIsPendingIrqForDMAMUX1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMAMUX1))
+#else /* not HAL_ITLINE_DMAMUX1 */
+#define ifIsPendingIrqForDMAMUX1() if ( false )
+#endif /* not HAL_ITLINE_DMAMUX1 */
+#ifdef HAL_ITLINE_DMA1_CH1
+#define ifIsPendingIrqForDMA1_CH1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH1))
+#else /* not HAL_ITLINE_DMA1_CH1 */
+#define ifIsPendingIrqForDMA1_CH1() if ( false )
+#endif /* not HAL_ITLINE_DMA1_CH1 */
+#ifdef HAL_ITLINE_DMA1_CH2
+#define ifIsPendingIrqForDMA1_CH2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH2))
+#else /* not HAL_ITLINE_DMA1_CH2 */
+#define ifIsPendingIrqForDMA1_CH2() if ( false )
+#endif /* not HAL_ITLINE_DMA1_CH2 */
+#ifdef HAL_ITLINE_DMA1_CH3
+#define ifIsPendingIrqForDMA1_CH3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH3))
+#else /* not HAL_ITLINE_DMA1_CH3 */
+#define ifIsPendingIrqForDMA1_CH3() if ( false )
+#endif /* not HAL_ITLINE_DMA1_CH3 */
+#ifdef HAL_ITLINE_DMA1_CH4
+#define ifIsPendingIrqForDMA1_CH4() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH4))
+#else /* not HAL_ITLINE_DMA1_CH4 */
+#define ifIsPendingIrqForDMA1_CH4() if ( false )
+#endif /* not HAL_ITLINE_DMA1_CH4 */
+#ifdef HAL_ITLINE_DMA1_CH5
+#define ifIsPendingIrqForDMA1_CH5() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH5))
+#else /* not HAL_ITLINE_DMA1_CH5 */
+#define ifIsPendingIrqForDMA1_CH5() if ( false )
+#endif /* not HAL_ITLINE_DMA1_CH5 */
+#ifdef HAL_ITLINE_DMA1_CH6
+#define ifIsPendingIrqForDMA1_CH6() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH6))
+#else /* not HAL_ITLINE_DMA1_CH6 */
+#define ifIsPendingIrqForDMA1_CH6() if ( false )
+#endif /* not HAL_ITLINE_DMA1_CH6 */
+#ifdef HAL_ITLINE_DMA1_CH7
+#define ifIsPendingIrqForDMA1_CH7() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA1_CH7))
+#else /* not HAL_ITLINE_DMA1_CH7 */
+#define ifIsPendingIrqForDMA1_CH7() if ( false )
+#endif /* not HAL_ITLINE_DMA1_CH7 */
+#ifdef HAL_ITLINE_DMA2_CH1
+#define ifIsPendingIrqForDMA2_CH1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH1))
+#else /* not HAL_ITLINE_DMA2_CH1 */
+#define ifIsPendingIrqForDMA2_CH1() if ( false )
+#endif /* not HAL_ITLINE_DMA2_CH1 */
+#ifdef HAL_ITLINE_DMA2_CH2
+#define ifIsPendingIrqForDMA2_CH2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH2))
+#else /* not HAL_ITLINE_DMA2_CH2 */
+#define ifIsPendingIrqForDMA2_CH2() if ( false )
+#endif /* not HAL_ITLINE_DMA2_CH2 */
+#ifdef HAL_ITLINE_DMA2_CH3
+#define ifIsPendingIrqForDMA2_CH3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH3))
+#else /* not HAL_ITLINE_DMA2_CH3 */
+#define ifIsPendingIrqForDMA2_CH3() if ( false )
+#endif /* not HAL_ITLINE_DMA2_CH3 */
+#ifdef HAL_ITLINE_DMA2_CH4
+#define ifIsPendingIrqForDMA2_CH4() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH4))
+#else /* not HAL_ITLINE_DMA2_CH4 */
+#define ifIsPendingIrqForDMA2_CH4() if ( false )
+#endif /* not HAL_ITLINE_DMA2_CH4 */
+#ifdef HAL_ITLINE_DMA2_CH5
+#define ifIsPendingIrqForDMA2_CH5() if (__HAL_GET_PENDING_IT(HAL_ITLINE_DMA2_CH5))
+#else /* not HAL_ITLINE_DMA2_CH5 */
+#define ifIsPendingIrqForDMA2_CH5() if ( false )
+#endif /* not HAL_ITLINE_DMA2_CH5 */
+#ifdef HAL_ITLINE_EWDG
+#define ifIsPendingIrqForEWDG() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EWDG))
+#else /* not HAL_ITLINE_EWDG */
+#define ifIsPendingIrqForEWDG() if ( false )
+#endif /* not HAL_ITLINE_EWDG */
+#ifdef HAL_ITLINE_WWDG
+#define ifIsPendingIrqForWWDG() if (__HAL_GET_PENDING_IT(HAL_ITLINE_WWDG))
+#else /* not HAL_ITLINE_WWDG */
+#define ifIsPendingIrqForWWDG() if ( false )
+#endif /* not HAL_ITLINE_WWDG */
+#ifdef HAL_ITLINE_EXTI0
+#define ifIsPendingIrqForEXTI0() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI0))
+#else /* not HAL_ITLINE_EXTI0 */
+#define ifIsPendingIrqForEXTI0() if ( false )
+#endif /* not HAL_ITLINE_EXTI0 */
+#ifdef HAL_ITLINE_EXTI1
+#define ifIsPendingIrqForEXTI1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI1))
+#else /* not HAL_ITLINE_EXTI1 */
+#define ifIsPendingIrqForEXTI1() if ( false )
+#endif /* not HAL_ITLINE_EXTI1 */
+#ifdef HAL_ITLINE_EXTI2
+#define ifIsPendingIrqForEXTI2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI2))
+#else /* not HAL_ITLINE_EXTI2 */
+#define ifIsPendingIrqForEXTI2() if ( false )
+#endif /* not HAL_ITLINE_EXTI2 */
+#ifdef HAL_ITLINE_EXTI3
+#define ifIsPendingIrqForEXTI3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI3))
+#else /* not HAL_ITLINE_EXTI3 */
+#define ifIsPendingIrqForEXTI3() if ( false )
+#endif /* not HAL_ITLINE_EXTI3 */
+#ifdef HAL_ITLINE_EXTI4
+#define ifIsPendingIrqForEXTI4() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI4))
+#else /* not HAL_ITLINE_EXTI4 */
+#define ifIsPendingIrqForEXTI4() if ( false )
+#endif /* not HAL_ITLINE_EXTI4 */
+#ifdef HAL_ITLINE_EXTI5
+#define ifIsPendingIrqForEXTI5() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI5))
+#else /* not HAL_ITLINE_EXTI5 */
+#define ifIsPendingIrqForEXTI5() if ( false )
+#endif /* not HAL_ITLINE_EXTI5 */
+#ifdef HAL_ITLINE_EXTI6
+#define ifIsPendingIrqForEXTI6() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI6))
+#else /* not HAL_ITLINE_EXTI6 */
+#define ifIsPendingIrqForEXTI6() if ( false )
+#endif /* not HAL_ITLINE_EXTI6 */
+#ifdef HAL_ITLINE_EXTI7
+#define ifIsPendingIrqForEXTI7() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI7))
+#else /* not HAL_ITLINE_EXTI7 */
+#define ifIsPendingIrqForEXTI7() if ( false )
+#endif /* not HAL_ITLINE_EXTI7 */
+#ifdef HAL_ITLINE_EXTI8
+#define ifIsPendingIrqForEXTI8() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI8))
+#else /* not HAL_ITLINE_EXTI8 */
+#define ifIsPendingIrqForEXTI8() if ( false )
+#endif /* not HAL_ITLINE_EXTI8 */
+#ifdef HAL_ITLINE_EXTI9
+#define ifIsPendingIrqForEXTI9() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI9))
+#else /* not HAL_ITLINE_EXTI9 */
+#define ifIsPendingIrqForEXTI9() if ( false )
+#endif /* not HAL_ITLINE_EXTI9 */
+#ifdef HAL_ITLINE_EXTI10
+#define ifIsPendingIrqForEXTI10() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI10))
+#else /* not HAL_ITLINE_EXTI10 */
+#define ifIsPendingIrqForEXTI10() if ( false )
+#endif /* not HAL_ITLINE_EXTI10 */
+#ifdef HAL_ITLINE_EXTI11
+#define ifIsPendingIrqForEXTI11() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI11))
+#else /* not HAL_ITLINE_EXTI11 */
+#define ifIsPendingIrqForEXTI11() if ( false )
+#endif /* not HAL_ITLINE_EXTI11 */
+#ifdef HAL_ITLINE_EXTI12
+#define ifIsPendingIrqForEXTI12() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI12))
+#else /* not HAL_ITLINE_EXTI12 */
+#define ifIsPendingIrqForEXTI12() if ( false )
+#endif /* not HAL_ITLINE_EXTI12 */
+#ifdef HAL_ITLINE_EXTI13
+#define ifIsPendingIrqForEXTI13() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI13))
+#else /* not HAL_ITLINE_EXTI13 */
+#define ifIsPendingIrqForEXTI13() if ( false )
+#endif /* not HAL_ITLINE_EXTI13 */
+#ifdef HAL_ITLINE_EXTI14
+#define ifIsPendingIrqForEXTI14() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI14))
+#else /* not HAL_ITLINE_EXTI14 */
+#define ifIsPendingIrqForEXTI14() if ( false )
+#endif /* not HAL_ITLINE_EXTI14 */
+#ifdef HAL_ITLINE_EXTI15
+#define ifIsPendingIrqForEXTI15() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EXTI15))
+#else /* not HAL_ITLINE_EXTI15 */
+#define ifIsPendingIrqForEXTI15() if ( false )
+#endif /* not HAL_ITLINE_EXTI15 */
+#ifdef HAL_ITLINE_FDCAN1_IT0
+#define ifIsPendingIrqForFDCAN1_IT0() if (__HAL_GET_PENDING_IT(HAL_ITLINE_FDCAN1_IT0))
+#else /* not HAL_ITLINE_FDCAN1_IT0 */
+#define ifIsPendingIrqForFDCAN1_IT0() if ( false )
+#endif /* not HAL_ITLINE_FDCAN1_IT0 */
+#ifdef HAL_ITLINE_FDCAN1_IT1
+#define ifIsPendingIrqForFDCAN1_IT1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_FDCAN1_IT1))
+#else /* not HAL_ITLINE_FDCAN1_IT1 */
+#define ifIsPendingIrqForFDCAN1_IT1() if ( false )
+#endif /* not HAL_ITLINE_FDCAN1_IT1 */
+#ifdef HAL_ITLINE_FDCAN2_IT0
+#define ifIsPendingIrqForFDCAN2_IT0() if (__HAL_GET_PENDING_IT(HAL_ITLINE_FDCAN2_IT0))
+#else /* not HAL_ITLINE_FDCAN2_IT0 */
+#define ifIsPendingIrqForFDCAN2_IT0() if ( false )
+#endif /* not HAL_ITLINE_FDCAN2_IT0 */
+#ifdef HAL_ITLINE_FDCAN2_IT1
+#define ifIsPendingIrqForFDCAN2_IT1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_FDCAN2_IT1))
+#else /* not HAL_ITLINE_FDCAN2_IT1 */
+#define ifIsPendingIrqForFDCAN2_IT1() if ( false )
+#endif /* not HAL_ITLINE_FDCAN2_IT1 */
+#ifdef HAL_ITLINE_FLASH_ECC
+#define ifIsPendingIrqForFLASH_ECC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_FLASH_ECC))
+#else /* not HAL_ITLINE_FLASH_ECC */
+#define ifIsPendingIrqForFLASH_ECC() if ( false )
+#endif /* not HAL_ITLINE_FLASH_ECC */
+#ifdef HAL_ITLINE_FLASH_ITF
+#define ifIsPendingIrqForFLASH_ITF() if (__HAL_GET_PENDING_IT(HAL_ITLINE_FLASH_ITF))
+#else /* not HAL_ITLINE_FLASH_ITF */
+#define ifIsPendingIrqForFLASH_ITF() if ( false )
+#endif /* not HAL_ITLINE_FLASH_ITF */
+#ifdef HAL_ITLINE_I2C1
+#define ifIsPendingIrqForI2C1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_I2C1))
+#else /* not HAL_ITLINE_I2C1 */
+#define ifIsPendingIrqForI2C1() if ( false )
+#endif /* not HAL_ITLINE_I2C1 */
+#ifdef HAL_ITLINE_I2C2
+#define ifIsPendingIrqForI2C2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_I2C2))
+#else /* not HAL_ITLINE_I2C2 */
+#define ifIsPendingIrqForI2C2() if ( false )
+#endif /* not HAL_ITLINE_I2C2 */
+#ifdef HAL_ITLINE_I2C3
+#define ifIsPendingIrqForI2C3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_I2C3))
+#else /* not HAL_ITLINE_I2C3 */
+#define ifIsPendingIrqForI2C3() if ( false )
+#endif /* not HAL_ITLINE_I2C3 */
+#ifdef HAL_ITLINE_LPTIM1
+#define ifIsPendingIrqForLPTIM1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_LPTIM1))
+#else /* not HAL_ITLINE_LPTIM1 */
+#define ifIsPendingIrqForLPTIM1() if ( false )
+#endif /* not HAL_ITLINE_LPTIM1 */
+#ifdef HAL_ITLINE_LPTIM2
+#define ifIsPendingIrqForLPTIM2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_LPTIM2))
+#else /* not HAL_ITLINE_LPTIM2 */
+#define ifIsPendingIrqForLPTIM2() if ( false )
+#endif /* not HAL_ITLINE_LPTIM2 */
+#ifdef HAL_ITLINE_LPUART1
+#define ifIsPendingIrqForLPUART1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_LPUART1))
+#else /* not HAL_ITLINE_LPUART1 */
+#define ifIsPendingIrqForLPUART1() if ( false )
+#endif /* not HAL_ITLINE_LPUART1 */
+#ifdef HAL_ITLINE_LPUART2
+#define ifIsPendingIrqForLPUART2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_LPUART2))
+#else /* not HAL_ITLINE_LPUART2 */
+#define ifIsPendingIrqForLPUART2() if ( false )
+#endif /* not HAL_ITLINE_LPUART2 */
 #ifdef HAL_ITLINE_PVDOUT
-#define ifIsPendingIrqForPWR() if (__HAL_GET_PENDING_IT(HAL_ITLINE_VDDIO2) != RESET || __HAL_GET_PENDING_IT(HAL_ITLINE_PVDOUT))
+#define ifIsPendingIrqForPVDOUT() if (__HAL_GET_PENDING_IT(HAL_ITLINE_PVDOUT))
 #else /* not HAL_ITLINE_PVDOUT */
-#define ifIsPendingIrqForPWR() if (__HAL_GET_PENDING_IT(HAL_ITLINE_VDDIO2) != RESET)
+#define ifIsPendingIrqForPVDOUT() if ( false )
 #endif /* not HAL_ITLINE_PVDOUT */
-#define ifIsPendingIrqForRTC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_RTC_WAKEUP) != RESET || __HAL_GET_PENDING_IT(HAL_ITLINE_RTC_TSTAMP) != RESET || __HAL_GET_PENDING_IT(HAL_ITLINE_RTC_ALRA) != RESET)
-#define ifIsPendingIrqForSPI1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_SPI1) != RESET)
-#define ifIsPendingIrqForSPI2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_SPI2) != RESET)
-#define ifIsPendingIrqForTIM1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM1) != RESET)
-#define ifIsPendingIrqForTIM2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM2) != RESET)
-#define ifIsPendingIrqForTIM3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM3) != RESET)
-#define ifIsPendingIrqForTIM6() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM6) != RESET)
-#define ifIsPendingIrqForTIM7() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM7) != RESET)
-#define ifIsPendingIrqForTIM14() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM14) != RESET)
-#define ifIsPendingIrqForTIM15() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM15) != RESET)
-#define ifIsPendingIrqForTIM16() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM16) != RESET)
-#define ifIsPendingIrqForTIM17() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM17) != RESET)
-#define ifIsPendingIrqForTSC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TSC_EOA) != RESET || __HAL_GET_PENDING_IT(HAL_ITLINE_TSC_MCE) != RESET)
-#define ifIsPendingIrqForUSART1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART1) != RESET)
-#define ifIsPendingIrqForUSART2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART2) != RESET)
-#define ifIsPendingIrqForUSART3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART3) != RESET)
-#define ifIsPendingIrqForUSART4() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART4) != RESET)
-#define ifIsPendingIrqForUSART5() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART5) != RESET)
-#define ifIsPendingIrqForUSART6() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART6) != RESET)
-#define ifIsPendingIrqForUSART7() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART7) != RESET)
-#define ifIsPendingIrqForUSART8() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART8) != RESET)
-#define ifIsPendingIrqForWWDG() if (__HAL_GET_PENDING_IT(HAL_ITLINE_EWDG) != RESET)
+#ifdef HAL_ITLINE_PVMOUT
+#define ifIsPendingIrqForPVMOUT() if (__HAL_GET_PENDING_IT(HAL_ITLINE_PVMOUT))
+#else /* not HAL_ITLINE_PVMOUT */
+#define ifIsPendingIrqForPVMOUT() if ( false )
+#endif /* not HAL_ITLINE_PVMOUT */
+#ifdef HAL_ITLINE_VDDIO2
+#define ifIsPendingIrqForVDDIO2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_VDDIO2))
+#else /* not HAL_ITLINE_VDDIO2 */
+#define ifIsPendingIrqForVDDIO2() if ( false )
+#endif /* not HAL_ITLINE_VDDIO2 */
+#ifdef HAL_ITLINE_RNG
+#define ifIsPendingIrqForRNG() if (__HAL_GET_PENDING_IT(HAL_ITLINE_RNG))
+#else /* not HAL_ITLINE_RNG */
+#define ifIsPendingIrqForRNG() if ( false )
+#endif /* not HAL_ITLINE_RNG */
+#ifdef HAL_ITLINE_RTC
+#define ifIsPendingIrqForRTC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_RTC))
+#else /* not HAL_ITLINE_RTC */
+#define ifIsPendingIrqForRTC() if ( false )
+#endif /* not HAL_ITLINE_RTC */
+#ifdef HAL_ITLINE_RTC_ALRA
+#define ifIsPendingIrqForRTC_ALRA() if (__HAL_GET_PENDING_IT(HAL_ITLINE_RTC_ALRA))
+#else /* not HAL_ITLINE_RTC_ALRA */
+#define ifIsPendingIrqForRTC_ALRA() if ( false )
+#endif /* not HAL_ITLINE_RTC_ALRA */
+#ifdef HAL_ITLINE_RTC_TSTAMP
+#define ifIsPendingIrqForRTC_TSTAMP() if (__HAL_GET_PENDING_IT(HAL_ITLINE_RTC_TSTAMP))
+#else /* not HAL_ITLINE_RTC_TSTAMP */
+#define ifIsPendingIrqForRTC_TSTAMP() if ( false )
+#endif /* not HAL_ITLINE_RTC_TSTAMP */
+#ifdef HAL_ITLINE_RTC_WAKEUP
+#define ifIsPendingIrqForRTC_WAKEUP() if (__HAL_GET_PENDING_IT(HAL_ITLINE_RTC_WAKEUP))
+#else /* not HAL_ITLINE_RTC_WAKEUP */
+#define ifIsPendingIrqForRTC_WAKEUP() if ( false )
+#endif /* not HAL_ITLINE_RTC_WAKEUP */
+#ifdef HAL_ITLINE_SPI1
+#define ifIsPendingIrqForSPI1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_SPI1))
+#else /* not HAL_ITLINE_SPI1 */
+#define ifIsPendingIrqForSPI1() if ( false )
+#endif /* not HAL_ITLINE_SPI1 */
+#ifdef HAL_ITLINE_SPI2
+#define ifIsPendingIrqForSPI2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_SPI2))
+#else /* not HAL_ITLINE_SPI2 */
+#define ifIsPendingIrqForSPI2() if ( false )
+#endif /* not HAL_ITLINE_SPI2 */
+#ifdef HAL_ITLINE_SPI3
+#define ifIsPendingIrqForSPI3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_SPI3))
+#else /* not HAL_ITLINE_SPI3 */
+#define ifIsPendingIrqForSPI3() if ( false )
+#endif /* not HAL_ITLINE_SPI3 */
+#ifdef HAL_ITLINE_TAMPER
+#define ifIsPendingIrqForTAMPER() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TAMPER))
+#else /* not HAL_ITLINE_TAMPER */
+#define ifIsPendingIrqForTAMPER() if ( false )
+#endif /* not HAL_ITLINE_TAMPER */
+#ifdef HAL_ITLINE_TIM1_BRK
+#define ifIsPendingIrqForTIM1_BRK() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM1_BRK))
+#else /* not HAL_ITLINE_TIM1_BRK */
+#define ifIsPendingIrqForTIM1_BRK() if ( false )
+#endif /* not HAL_ITLINE_TIM1_BRK */
+#ifdef HAL_ITLINE_TIM1_CC
+#define ifIsPendingIrqForTIM1_CC() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM1_CC))
+#else /* not HAL_ITLINE_TIM1_CC */
+#define ifIsPendingIrqForTIM1_CC() if ( false )
+#endif /* not HAL_ITLINE_TIM1_CC */
+#ifdef HAL_ITLINE_TIM1_CCU
+#define ifIsPendingIrqForTIM1_CCU() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM1_CCU))
+#else /* not HAL_ITLINE_TIM1_CCU */
+#define ifIsPendingIrqForTIM1_CCU() if ( false )
+#endif /* not HAL_ITLINE_TIM1_CCU */
+#ifdef HAL_ITLINE_TIM1_TRG
+#define ifIsPendingIrqForTIM1_TRG() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM1_TRG))
+#else /* not HAL_ITLINE_TIM1_TRG */
+#define ifIsPendingIrqForTIM1_TRG() if ( false )
+#endif /* not HAL_ITLINE_TIM1_TRG */
+#ifdef HAL_ITLINE_TIM1_UPD
+#define ifIsPendingIrqForTIM1_UPD() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM1_UPD))
+#else /* not HAL_ITLINE_TIM1_UPD */
+#define ifIsPendingIrqForTIM1_UPD() if ( false )
+#endif /* not HAL_ITLINE_TIM1_UPD */
+#ifdef HAL_ITLINE_TIM2
+#define ifIsPendingIrqForTIM2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM2))
+#else /* not HAL_ITLINE_TIM2 */
+#define ifIsPendingIrqForTIM2() if ( false )
+#endif /* not HAL_ITLINE_TIM2 */
+#ifdef HAL_ITLINE_TIM3
+#define ifIsPendingIrqForTIM3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM3))
+#else /* not HAL_ITLINE_TIM3 */
+#define ifIsPendingIrqForTIM3() if ( false )
+#endif /* not HAL_ITLINE_TIM3 */
+#ifdef HAL_ITLINE_TIM4
+#define ifIsPendingIrqForTIM4() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM4))
+#else /* not HAL_ITLINE_TIM4 */
+#define ifIsPendingIrqForTIM4() if ( false )
+#endif /* not HAL_ITLINE_TIM4 */
+#ifdef HAL_ITLINE_TIM6
+#define ifIsPendingIrqForTIM6() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM6))
+#else /* not HAL_ITLINE_TIM6 */
+#define ifIsPendingIrqForTIM6() if ( false )
+#endif /* not HAL_ITLINE_TIM6 */
+#ifdef HAL_ITLINE_TIM7
+#define ifIsPendingIrqForTIM7() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM7))
+#else /* not HAL_ITLINE_TIM7 */
+#define ifIsPendingIrqForTIM7() if ( false )
+#endif /* not HAL_ITLINE_TIM7 */
+#ifdef HAL_ITLINE_TIM14
+#define ifIsPendingIrqForTIM14() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM14))
+#else /* not HAL_ITLINE_TIM14 */
+#define ifIsPendingIrqForTIM14() if ( false )
+#endif /* not HAL_ITLINE_TIM14 */
+#ifdef HAL_ITLINE_TIM15
+#define ifIsPendingIrqForTIM15() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM15))
+#else /* not HAL_ITLINE_TIM15 */
+#define ifIsPendingIrqForTIM15() if ( false )
+#endif /* not HAL_ITLINE_TIM15 */
+#ifdef HAL_ITLINE_TIM16
+#define ifIsPendingIrqForTIM16() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM16))
+#else /* not HAL_ITLINE_TIM16 */
+#define ifIsPendingIrqForTIM16() if ( false )
+#endif /* not HAL_ITLINE_TIM16 */
+#ifdef HAL_ITLINE_TIM17
+#define ifIsPendingIrqForTIM17() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TIM17))
+#else /* not HAL_ITLINE_TIM17 */
+#define ifIsPendingIrqForTIM17() if ( false )
+#endif /* not HAL_ITLINE_TIM17 */
+#ifdef HAL_ITLINE_TSC_EOA
+#define ifIsPendingIrqForTSC_EOA() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TSC_EOA))
+#else /* not HAL_ITLINE_TSC_EOA */
+#define ifIsPendingIrqForTSC_EOA() if ( false )
+#endif /* not HAL_ITLINE_TSC_EOA */
+#ifdef HAL_ITLINE_TSC_MCE
+#define ifIsPendingIrqForTSC_MCE() if (__HAL_GET_PENDING_IT(HAL_ITLINE_TSC_MCE))
+#else /* not HAL_ITLINE_TSC_MCE */
+#define ifIsPendingIrqForTSC_MCE() if ( false )
+#endif /* not HAL_ITLINE_TSC_MCE */
+#ifdef HAL_ITLINE_UCPD1
+#define ifIsPendingIrqForUCPD1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_UCPD1))
+#else /* not HAL_ITLINE_UCPD1 */
+#define ifIsPendingIrqForUCPD1() if ( false )
+#endif /* not HAL_ITLINE_UCPD1 */
+#ifdef HAL_ITLINE_UCPD2
+#define ifIsPendingIrqForUCPD2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_UCPD2))
+#else /* not HAL_ITLINE_UCPD2 */
+#define ifIsPendingIrqForUCPD2() if ( false )
+#endif /* not HAL_ITLINE_UCPD2 */
+#ifdef HAL_ITLINE_USART1
+#define ifIsPendingIrqForUSART1() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART1))
+#else /* not HAL_ITLINE_USART1 */
+#define ifIsPendingIrqForUSART1() if ( false )
+#endif /* not HAL_ITLINE_USART1 */
+#ifdef HAL_ITLINE_USART2
+#define ifIsPendingIrqForUSART2() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART2))
+#else /* not HAL_ITLINE_USART2 */
+#define ifIsPendingIrqForUSART2() if ( false )
+#endif /* not HAL_ITLINE_USART2 */
+#ifdef HAL_ITLINE_USART3
+#define ifIsPendingIrqForUSART3() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART3))
+#else /* not HAL_ITLINE_USART3 */
+#define ifIsPendingIrqForUSART3() if ( false )
+#endif /* not HAL_ITLINE_USART3 */
+#ifdef HAL_ITLINE_USART4
+#define ifIsPendingIrqForUSART4() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART4))
+#else /* not HAL_ITLINE_USART4 */
+#define ifIsPendingIrqForUSART4() if ( false )
+#endif /* not HAL_ITLINE_USART4 */
+#ifdef HAL_ITLINE_USART5
+#define ifIsPendingIrqForUSART5() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART5))
+#else /* not HAL_ITLINE_USART5 */
+#define ifIsPendingIrqForUSART5() if ( false )
+#endif /* not HAL_ITLINE_USART5 */
+#ifdef HAL_ITLINE_USART6
+#define ifIsPendingIrqForUSART6() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART6))
+#else /* not HAL_ITLINE_USART6 */
+#define ifIsPendingIrqForUSART6() if ( false )
+#endif /* not HAL_ITLINE_USART6 */
+#ifdef HAL_ITLINE_USART7
+#define ifIsPendingIrqForUSART7() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART7))
+#else /* not HAL_ITLINE_USART7 */
+#define ifIsPendingIrqForUSART7() if ( false )
+#endif /* not HAL_ITLINE_USART7 */
+#ifdef HAL_ITLINE_USART8
+#define ifIsPendingIrqForUSART8() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USART8))
+#else /* not HAL_ITLINE_USART8 */
+#define ifIsPendingIrqForUSART8() if ( false )
+#endif /* not HAL_ITLINE_USART8 */
+#ifdef HAL_ITLINE_USB
+#define ifIsPendingIrqForUSB() if (__HAL_GET_PENDING_IT(HAL_ITLINE_USB))
+#else /* not HAL_ITLINE_USB */
+#define ifIsPendingIrqForUSB() if ( false )
+#endif /* not HAL_ITLINE_USB */
 #else /* not __HAL_GET_PENDING_IT */
 #define ifIsPendingIrqForADC()
+#define ifIsPendingIrqForAES()
 #define ifIsPendingIrqForCAN()
 #define ifIsPendingIrqForCEC()
 #define ifIsPendingIrqForCLK_CTRL()
 #define ifIsPendingIrqForCOMP1()
 #define ifIsPendingIrqForCOMP2()
+#define ifIsPendingIrqForCOMP3()
 #define ifIsPendingIrqForCRS()
 #define ifIsPendingIrqForDAC()
+#define ifIsPendingIrqForDMAMUX1()
 #define ifIsPendingIrqForDMA1_CH1()
 #define ifIsPendingIrqForDMA1_CH2()
 #define ifIsPendingIrqForDMA1_CH3()
@@ -104,6 +506,8 @@
 #define ifIsPendingIrqForDMA2_CH3()
 #define ifIsPendingIrqForDMA2_CH4()
 #define ifIsPendingIrqForDMA2_CH5()
+#define ifIsPendingIrqForEWDG()
+#define ifIsPendingIrqForWWDG()
 #define ifIsPendingIrqForEXTI0()
 #define ifIsPendingIrqForEXTI1()
 #define ifIsPendingIrqForEXTI2()
@@ -120,23 +524,49 @@
 #define ifIsPendingIrqForEXTI13()
 #define ifIsPendingIrqForEXTI14()
 #define ifIsPendingIrqForEXTI15()
-#define ifIsPendingIrqForFLASH()
+#define ifIsPendingIrqForFDCAN1_IT0()
+#define ifIsPendingIrqForFDCAN1_IT1()
+#define ifIsPendingIrqForFDCAN2_IT0()
+#define ifIsPendingIrqForFDCAN2_IT1()
+#define ifIsPendingIrqForFLASH_ECC()
+#define ifIsPendingIrqForFLASH_ITF()
 #define ifIsPendingIrqForI2C1()
 #define ifIsPendingIrqForI2C2()
-#define ifIsPendingIrqForPWR()
+#define ifIsPendingIrqForI2C3()
+#define ifIsPendingIrqForLPTIM1()
+#define ifIsPendingIrqForLPTIM2()
+#define ifIsPendingIrqForLPUART1()
+#define ifIsPendingIrqForLPUART2()
+#define ifIsPendingIrqForPVDOUT()
+#define ifIsPendingIrqForPVMOUT()
+#define ifIsPendingIrqForVDDIO2()
+#define ifIsPendingIrqForRNG()
 #define ifIsPendingIrqForRTC()
+#define ifIsPendingIrqForRTC_ALRA()
+#define ifIsPendingIrqForRTC_TSTAMP()
+#define ifIsPendingIrqForRTC_WAKEUP()
 #define ifIsPendingIrqForSPI1()
 #define ifIsPendingIrqForSPI2()
-#define ifIsPendingIrqForTIM1()
+#define ifIsPendingIrqForSPI3()
+#define ifIsPendingIrqForTAMPER()
+#define ifIsPendingIrqForTIM1_BRK()
+#define ifIsPendingIrqForTIM1_CC()
+#define ifIsPendingIrqForTIM1_CCU()
+#define ifIsPendingIrqForTIM1_TRG()
+#define ifIsPendingIrqForTIM1_UPD()
 #define ifIsPendingIrqForTIM2()
 #define ifIsPendingIrqForTIM3()
+#define ifIsPendingIrqForTIM4()
 #define ifIsPendingIrqForTIM6()
 #define ifIsPendingIrqForTIM7()
 #define ifIsPendingIrqForTIM14()
 #define ifIsPendingIrqForTIM15()
 #define ifIsPendingIrqForTIM16()
 #define ifIsPendingIrqForTIM17()
-#define ifIsPendingIrqForTSC()
+#define ifIsPendingIrqForTSC_EOA()
+#define ifIsPendingIrqForTSC_MCE()
+#define ifIsPendingIrqForUCPD1()
+#define ifIsPendingIrqForUCPD2()
 #define ifIsPendingIrqForUSART1()
 #define ifIsPendingIrqForUSART2()
 #define ifIsPendingIrqForUSART3()
@@ -145,7 +575,7 @@
 #define ifIsPendingIrqForUSART6()
 #define ifIsPendingIrqForUSART7()
 #define ifIsPendingIrqForUSART8()
-#define ifIsPendingIrqForWWDG()
+#define ifIsPendingIrqForUSB()
 #endif /* not __HAL_GET_PENDING_IT */
 
 
@@ -731,6 +1161,7 @@ __attribute__((weak)) void STM32CubeDuinoIrqHandlerForLPTIM3(void) {}
 __attribute__((weak)) void STM32CubeDuinoIrqHandlerForLPTIM4(void) {}
 __attribute__((weak)) void STM32CubeDuinoIrqHandlerForLPTIM5(void) {}
 __attribute__((weak)) void STM32CubeDuinoIrqHandlerForLPUART1(void) {}
+__attribute__((weak)) void STM32CubeDuinoIrqHandlerForLPUART2(void) {}
 __attribute__((weak)) void STM32CubeDuinoIrqHandlerForLTDC(void) {}
 __attribute__((weak)) void STM32CubeDuinoIrqHandlerForMDIOS(void) {}
 __attribute__((weak)) void STM32CubeDuinoIrqHandlerForMDMA(void) {}
@@ -768,6 +1199,7 @@ __attribute__((weak)) void STM32CubeDuinoIrqHandlerForSPI4(void) {}
 __attribute__((weak)) void STM32CubeDuinoIrqHandlerForSPI5(void) {}
 __attribute__((weak)) void STM32CubeDuinoIrqHandlerForSPI6(void) {}
 __attribute__((weak)) void STM32CubeDuinoIrqHandlerForSWPMI1(void) {}
+__attribute__((weak)) void STM32CubeDuinoIrqHandlerForTAMPER(void) {}
 __attribute__((weak)) void STM32CubeDuinoIrqHandlerForTAMP(void) {}
 __attribute__((weak)) void STM32CubeDuinoIrqHandlerForTEMPSENS(void) {}
 __attribute__((weak)) void STM32CubeDuinoIrqHandlerForTIM1(void) {}
@@ -907,7 +1339,7 @@ void ADC5_IRQHandler(void) {
 /** AES global interrupt */
 void AES_IRQHandler(void) {
 	clearNvicIrqFor(AES_IRQn);
-	STM32CubeDuinoIrqHandlerForAES();
+	ifIsPendingIrqForAES() STM32CubeDuinoIrqHandlerForAES();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -916,8 +1348,8 @@ void AES_IRQHandler(void) {
 /** AES and RNG interrupts */
 void AES_RNG_IRQHandler(void) {
 	clearNvicIrqFor(AES_RNG_IRQn);
-	STM32CubeDuinoIrqHandlerForAES();
-	STM32CubeDuinoIrqHandlerForRNG();
+	ifIsPendingIrqForAES() STM32CubeDuinoIrqHandlerForAES();
+	ifIsPendingIrqForRNG() STM32CubeDuinoIrqHandlerForRNG();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -926,9 +1358,9 @@ void AES_RNG_IRQHandler(void) {
 /** AES, RNG and LPUART1 interrupts / LPUART1 wake-up interrupt through EXTI line 28 */
 void AES_RNG_LPUART1_IRQHandler(void) {
 	clearNvicIrqFor(AES_RNG_LPUART1_IRQn);
-	STM32CubeDuinoIrqHandlerForAES();
-	STM32CubeDuinoIrqHandlerForLPUART1();
-	STM32CubeDuinoIrqHandlerForRNG();
+	ifIsPendingIrqForAES() STM32CubeDuinoIrqHandlerForAES();
+	ifIsPendingIrqForLPUART1() STM32CubeDuinoIrqHandlerForLPUART1();
+	ifIsPendingIrqForRNG() STM32CubeDuinoIrqHandlerForRNG();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or IS_UART_MODE */
 
@@ -1320,7 +1752,7 @@ void COMP1_2_3_IRQHandler(void) {
 	clearNvicIrqFor(COMP1_2_3_IRQn);
 	ifIsPendingIrqForCOMP1() STM32CubeDuinoIrqHandlerForCOMP1();
 	ifIsPendingIrqForCOMP2() STM32CubeDuinoIrqHandlerForCOMP2();
-	STM32CubeDuinoIrqHandlerForCOMP3();
+	ifIsPendingIrqForCOMP3() STM32CubeDuinoIrqHandlerForCOMP3();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -1577,7 +2009,7 @@ void DFSDM2_IRQHandler(void) {
 /** DMAMUX overrun interrupt */
 void DMAMUX_OVR_IRQHandler(void) {
 	clearNvicIrqFor(DMAMUX_OVR_IRQn);
-	STM32CubeDuinoIrqHandlerForDMA();
+	ifIsPendingIrqForDMAMUX1() STM32CubeDuinoIrqHandlerForDMA();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -1586,7 +2018,7 @@ void DMAMUX_OVR_IRQHandler(void) {
 /** DMAMUX1 non-secure overrun interrupt */
 void DMAMUX1_IRQHandler(void) {
 	clearNvicIrqFor(DMAMUX1_IRQn);
-	STM32CubeDuinoIrqHandlerForDMA();
+	ifIsPendingIrqForDMAMUX1() STM32CubeDuinoIrqHandlerForDMA();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -1595,7 +2027,7 @@ void DMAMUX1_IRQHandler(void) {
 /** DMAMUX1 overrun interrupt */
 void DMAMUX1_OVR_IRQHandler(void) {
 	clearNvicIrqFor(DMAMUX1_OVR_IRQn);
-	STM32CubeDuinoIrqHandlerForDMA();
+	ifIsPendingIrqForDMAMUX1() STM32CubeDuinoIrqHandlerForDMA();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -1604,7 +2036,7 @@ void DMAMUX1_OVR_IRQHandler(void) {
 /** DMAMUX1 secure overrun interrupt */
 void DMAMUX1_S_IRQHandler(void) {
 	clearNvicIrqFor(DMAMUX1_S_IRQn);
-	STM32CubeDuinoIrqHandlerForDMA();
+	ifIsPendingIrqForDMAMUX1() STM32CubeDuinoIrqHandlerForDMA();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -2079,66 +2511,83 @@ void ETH1_WKUP_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || !defined(STM32CUBEDUINO_DISABLE_EXTI)
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line 0 interrupt */
 void EXTI0_IRQHandler(void) {
 	clearNvicIrqFor(EXTI0_IRQn);
 	ifIsPendingIrqForEXTI0() STM32CubeDuinoIrqHandlerForEXTI0();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line 0 and line 1 interrupts */
 void EXTI0_1_IRQHandler(void) {
 	clearNvicIrqFor(EXTI0_1_IRQn);
 	ifIsPendingIrqForEXTI0() STM32CubeDuinoIrqHandlerForEXTI0();
 	ifIsPendingIrqForEXTI1() STM32CubeDuinoIrqHandlerForEXTI1();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line 1 interrupt */
 void EXTI1_IRQHandler(void) {
 	clearNvicIrqFor(EXTI1_IRQn);
 	ifIsPendingIrqForEXTI1() STM32CubeDuinoIrqHandlerForEXTI1();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line 2 interrupt */
 void EXTI2_IRQHandler(void) {
 	clearNvicIrqFor(EXTI2_IRQn);
 	ifIsPendingIrqForEXTI2() STM32CubeDuinoIrqHandlerForEXTI2();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line2 interrupt and touch sense controller interrupt */
 void EXTI2_TSC_IRQHandler(void) {
 	clearNvicIrqFor(EXTI2_TSC_IRQn);
 	ifIsPendingIrqForEXTI2() STM32CubeDuinoIrqHandlerForEXTI2();
-	ifIsPendingIrqForTSC() STM32CubeDuinoIrqHandlerForTSC();
+	ifIsPendingIrqForTSC_EOA() STM32CubeDuinoIrqHandlerForTSC();
+	ifIsPendingIrqForTSC_MCE() STM32CubeDuinoIrqHandlerForTSC();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line 2 and line 3 interrupts */
 void EXTI2_3_IRQHandler(void) {
 	clearNvicIrqFor(EXTI2_3_IRQn);
 	ifIsPendingIrqForEXTI2() STM32CubeDuinoIrqHandlerForEXTI2();
 	ifIsPendingIrqForEXTI3() STM32CubeDuinoIrqHandlerForEXTI3();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line 3 interrupt */
 void EXTI3_IRQHandler(void) {
 	clearNvicIrqFor(EXTI3_IRQn);
 	ifIsPendingIrqForEXTI3() STM32CubeDuinoIrqHandlerForEXTI3();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line 4 interrupt */
 void EXTI4_IRQHandler(void) {
 	clearNvicIrqFor(EXTI4_IRQn);
 	ifIsPendingIrqForEXTI4() STM32CubeDuinoIrqHandlerForEXTI4();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line 4 to 15 interrupts */
 void EXTI4_15_IRQHandler(void) {
 	clearNvicIrqFor(EXTI4_15_IRQn);
@@ -2155,43 +2604,55 @@ void EXTI4_15_IRQHandler(void) {
 	ifIsPendingIrqForEXTI14() STM32CubeDuinoIrqHandlerForEXTI14();
 	ifIsPendingIrqForEXTI15() STM32CubeDuinoIrqHandlerForEXTI15();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line5 interrupt */
 void EXTI5_IRQHandler(void) {
 	clearNvicIrqFor(EXTI5_IRQn);
 	ifIsPendingIrqForEXTI5() STM32CubeDuinoIrqHandlerForEXTI5();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line6 interrupt */
 void EXTI6_IRQHandler(void) {
 	clearNvicIrqFor(EXTI6_IRQn);
 	ifIsPendingIrqForEXTI6() STM32CubeDuinoIrqHandlerForEXTI6();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line7 interrupt */
 void EXTI7_IRQHandler(void) {
 	clearNvicIrqFor(EXTI7_IRQn);
 	ifIsPendingIrqForEXTI7() STM32CubeDuinoIrqHandlerForEXTI7();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line8 interrupt */
 void EXTI8_IRQHandler(void) {
 	clearNvicIrqFor(EXTI8_IRQn);
 	ifIsPendingIrqForEXTI8() STM32CubeDuinoIrqHandlerForEXTI8();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line9 interrupt */
 void EXTI9_IRQHandler(void) {
 	clearNvicIrqFor(EXTI9_IRQn);
 	ifIsPendingIrqForEXTI9() STM32CubeDuinoIrqHandlerForEXTI9();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line[9:5] interrupts */
 void EXTI9_5_IRQHandler(void) {
 	clearNvicIrqFor(EXTI9_5_IRQn);
@@ -2201,50 +2662,64 @@ void EXTI9_5_IRQHandler(void) {
 	ifIsPendingIrqForEXTI8() STM32CubeDuinoIrqHandlerForEXTI8();
 	ifIsPendingIrqForEXTI9() STM32CubeDuinoIrqHandlerForEXTI9();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line10 interrupt */
 void EXTI10_IRQHandler(void) {
 	clearNvicIrqFor(EXTI10_IRQn);
 	ifIsPendingIrqForEXTI10() STM32CubeDuinoIrqHandlerForEXTI10();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line11 interrupt */
 void EXTI11_IRQHandler(void) {
 	clearNvicIrqFor(EXTI11_IRQn);
 	ifIsPendingIrqForEXTI11() STM32CubeDuinoIrqHandlerForEXTI11();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line12 interrupt */
 void EXTI12_IRQHandler(void) {
 	clearNvicIrqFor(EXTI12_IRQn);
 	ifIsPendingIrqForEXTI12() STM32CubeDuinoIrqHandlerForEXTI12();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line13 interrupt */
 void EXTI13_IRQHandler(void) {
 	clearNvicIrqFor(EXTI13_IRQn);
 	ifIsPendingIrqForEXTI13() STM32CubeDuinoIrqHandlerForEXTI13();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line14 interrupt */
 void EXTI14_IRQHandler(void) {
 	clearNvicIrqFor(EXTI14_IRQn);
 	ifIsPendingIrqForEXTI14() STM32CubeDuinoIrqHandlerForEXTI14();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line15 interrupt */
 void EXTI15_IRQHandler(void) {
 	clearNvicIrqFor(EXTI15_IRQn);
 	ifIsPendingIrqForEXTI15() STM32CubeDuinoIrqHandlerForEXTI15();
 }
+#endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_EXTI))
 /** EXTI line[15:10] interrupts */
 void EXTI15_10_IRQHandler(void) {
 	clearNvicIrqFor(EXTI15_10_IRQn);
@@ -2262,8 +2737,10 @@ void EXTI15_10_IRQHandler(void) {
 /** FDCAN calibration unit interrupt */
 void FDCAN_CAL_IRQHandler(void) {
 	clearNvicIrqFor(FDCAN_CAL_IRQn);
-	STM32CubeDuinoIrqHandlerForFDCAN1();
-	STM32CubeDuinoIrqHandlerForFDCAN2();
+	ifIsPendingIrqForFDCAN1_IT0() STM32CubeDuinoIrqHandlerForFDCAN1();
+	ifIsPendingIrqForFDCAN1_IT1() STM32CubeDuinoIrqHandlerForFDCAN1();
+	ifIsPendingIrqForFDCAN2_IT0() STM32CubeDuinoIrqHandlerForFDCAN2();
+	ifIsPendingIrqForFDCAN2_IT1() STM32CubeDuinoIrqHandlerForFDCAN2();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -2272,7 +2749,8 @@ void FDCAN_CAL_IRQHandler(void) {
 /** FDCAN1 interrupt 0 */
 void FDCAN1_IT0_IRQHandler(void) {
 	clearNvicIrqFor(FDCAN1_IT0_IRQn);
-	STM32CubeDuinoIrqHandlerForFDCAN1();
+	ifIsPendingIrqForFDCAN1_IT0() STM32CubeDuinoIrqHandlerForFDCAN1();
+	ifIsPendingIrqForFDCAN1_IT1() STM32CubeDuinoIrqHandlerForFDCAN1();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -2281,7 +2759,8 @@ void FDCAN1_IT0_IRQHandler(void) {
 /** FDCAN1 interrupt 1 */
 void FDCAN1_IT1_IRQHandler(void) {
 	clearNvicIrqFor(FDCAN1_IT1_IRQn);
-	STM32CubeDuinoIrqHandlerForFDCAN1();
+	ifIsPendingIrqForFDCAN1_IT0() STM32CubeDuinoIrqHandlerForFDCAN1();
+	ifIsPendingIrqForFDCAN1_IT1() STM32CubeDuinoIrqHandlerForFDCAN1();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -2290,7 +2769,8 @@ void FDCAN1_IT1_IRQHandler(void) {
 /** FDCAN2 interrupt 0 */
 void FDCAN2_IT0_IRQHandler(void) {
 	clearNvicIrqFor(FDCAN2_IT0_IRQn);
-	STM32CubeDuinoIrqHandlerForFDCAN2();
+	ifIsPendingIrqForFDCAN2_IT0() STM32CubeDuinoIrqHandlerForFDCAN2();
+	ifIsPendingIrqForFDCAN2_IT1() STM32CubeDuinoIrqHandlerForFDCAN2();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -2299,7 +2779,8 @@ void FDCAN2_IT0_IRQHandler(void) {
 /** FDCAN2 interrupt 1 */
 void FDCAN2_IT1_IRQHandler(void) {
 	clearNvicIrqFor(FDCAN2_IT1_IRQn);
-	STM32CubeDuinoIrqHandlerForFDCAN2();
+	ifIsPendingIrqForFDCAN2_IT0() STM32CubeDuinoIrqHandlerForFDCAN2();
+	ifIsPendingIrqForFDCAN2_IT1() STM32CubeDuinoIrqHandlerForFDCAN2();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -2326,7 +2807,8 @@ void FDCAN3_IT1_IRQHandler(void) {
 /** Flash and EEPROM global interrupt */
 void FLASH_IRQHandler(void) {
 	clearNvicIrqFor(FLASH_IRQn);
-	ifIsPendingIrqForFLASH() STM32CubeDuinoIrqHandlerForFLASH();
+	ifIsPendingIrqForFLASH_ECC() STM32CubeDuinoIrqHandlerForFLASH();
+	ifIsPendingIrqForFLASH_ITF() STM32CubeDuinoIrqHandlerForFLASH();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -2335,7 +2817,8 @@ void FLASH_IRQHandler(void) {
 /** Flash secure global interrupt */
 void FLASH_S_IRQHandler(void) {
 	clearNvicIrqFor(FLASH_S_IRQn);
-	ifIsPendingIrqForFLASH() STM32CubeDuinoIrqHandlerForFLASH();
+	ifIsPendingIrqForFLASH_ECC() STM32CubeDuinoIrqHandlerForFLASH();
+	ifIsPendingIrqForFLASH_ITF() STM32CubeDuinoIrqHandlerForFLASH();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -2436,7 +2919,7 @@ void HASH_IRQHandler(void) {
 void HASH_RNG_IRQHandler(void) {
 	clearNvicIrqFor(HASH_RNG_IRQn);
 	STM32CubeDuinoIrqHandlerForHASH();
-	STM32CubeDuinoIrqHandlerForRNG();
+	ifIsPendingIrqForRNG() STM32CubeDuinoIrqHandlerForRNG();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -2668,7 +3151,7 @@ void I2C2_IRQHandler(void) {
 /** I2C3 error interrupt */
 void I2C3_ER_IRQHandler(void) {
 	clearNvicIrqFor(I2C3_ER_IRQn);
-	STM32CubeDuinoIrqHandlerForI2C3();
+	ifIsPendingIrqForI2C3() STM32CubeDuinoIrqHandlerForI2C3();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or IS_I2C_ADDRESSING_MODE */
 
@@ -2677,7 +3160,7 @@ void I2C3_ER_IRQHandler(void) {
 /** I2C3 event interrupt / I2C3 wake-up interrupt through EXTI line 25 */
 void I2C3_EV_IRQHandler(void) {
 	clearNvicIrqFor(I2C3_EV_IRQn);
-	STM32CubeDuinoIrqHandlerForI2C3();
+	ifIsPendingIrqForI2C3() STM32CubeDuinoIrqHandlerForI2C3();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or IS_I2C_ADDRESSING_MODE */
 
@@ -2686,7 +3169,7 @@ void I2C3_EV_IRQHandler(void) {
 /** I2C3 global interrupt / I2C3 wake-up interrupt through EXTI line 24 */
 void I2C3_IRQHandler(void) {
 	clearNvicIrqFor(I2C3_IRQn);
-	STM32CubeDuinoIrqHandlerForI2C3();
+	ifIsPendingIrqForI2C3() STM32CubeDuinoIrqHandlerForI2C3();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or IS_I2C_ADDRESSING_MODE */
 
@@ -2763,25 +3246,25 @@ void LCD_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(LPTIM_PRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_ENABLE_TIMER) && defined(LPTIM_PRESCALER_DIV1))
 /** LPTIM1 global interrupt / LPTIM1 wake-up interrupt through EXTI line 29 */
 void LPTIM1_IRQHandler(void) {
 	clearNvicIrqFor(LPTIM1_IRQn);
-	STM32CubeDuinoIrqHandlerForLPTIM1();
+	ifIsPendingIrqForLPTIM1() STM32CubeDuinoIrqHandlerForLPTIM1();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or LPTIM_PRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(LPTIM_PRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_ENABLE_TIMER) && defined(LPTIM_PRESCALER_DIV1))
 /** LPTIM2 global interrupt through EXTI line 33 */
 void LPTIM2_IRQHandler(void) {
 	clearNvicIrqFor(LPTIM2_IRQn);
-	STM32CubeDuinoIrqHandlerForLPTIM2();
+	ifIsPendingIrqForLPTIM2() STM32CubeDuinoIrqHandlerForLPTIM2();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or LPTIM_PRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(LPTIM_PRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_ENABLE_TIMER) && defined(LPTIM_PRESCALER_DIV1))
 /** LPTIM3 global interrupt / LPTIM3 wake-up interrupt through EXTI line 42 */
 void LPTIM3_IRQHandler(void) {
 	clearNvicIrqFor(LPTIM3_IRQn);
@@ -2790,7 +3273,7 @@ void LPTIM3_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or LPTIM_PRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(LPTIM_PRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_ENABLE_TIMER) && defined(LPTIM_PRESCALER_DIV1))
 /** LPTIM4 global interrupt */
 void LPTIM4_IRQHandler(void) {
 	clearNvicIrqFor(LPTIM4_IRQn);
@@ -2799,7 +3282,7 @@ void LPTIM4_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or LPTIM_PRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(LPTIM_PRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_ENABLE_TIMER) && defined(LPTIM_PRESCALER_DIV1))
 /** LPTIM5 global interrupt */
 void LPTIM5_IRQHandler(void) {
 	clearNvicIrqFor(LPTIM5_IRQn);
@@ -2812,7 +3295,7 @@ void LPTIM5_IRQHandler(void) {
 /** LPUART1 global interrupt / LPUART1 wake-up interrupt through EXTI line 28 */
 void LPUART1_IRQHandler(void) {
 	clearNvicIrqFor(LPUART1_IRQn);
-	STM32CubeDuinoIrqHandlerForLPUART1();
+	ifIsPendingIrqForLPUART1() STM32CubeDuinoIrqHandlerForLPUART1();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or IS_UART_MODE */
 
@@ -2992,7 +3475,9 @@ void PKA_IRQHandler(void) {
 /** PVD and AVD interrupt through EXTI line 16 */
 void PVD_AVD_IRQHandler(void) {
 	clearNvicIrqFor(PVD_AVD_IRQn);
-	ifIsPendingIrqForPWR() STM32CubeDuinoIrqHandlerForPWR();
+	ifIsPendingIrqForPVDOUT() STM32CubeDuinoIrqHandlerForPWR();
+	ifIsPendingIrqForPVMOUT() STM32CubeDuinoIrqHandlerForPWR();
+	ifIsPendingIrqForVDDIO2() STM32CubeDuinoIrqHandlerForPWR();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3047,7 +3532,7 @@ void RCC_WAKEUP_IRQHandler(void) {
 /** RNG global interrupt */
 void RNG_IRQHandler(void) {
 	clearNvicIrqFor(RNG_IRQn);
-	STM32CubeDuinoIrqHandlerForRNG();
+	ifIsPendingIrqForRNG() STM32CubeDuinoIrqHandlerForRNG();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3056,8 +3541,8 @@ void RNG_IRQHandler(void) {
 /** RNG and LPUART1 Interrupts / LPUART1 wake-up interrupt through EXTI line 28 */
 void RNG_LPUART1_IRQHandler(void) {
 	clearNvicIrqFor(RNG_LPUART1_IRQn);
-	STM32CubeDuinoIrqHandlerForLPUART1();
-	STM32CubeDuinoIrqHandlerForRNG();
+	ifIsPendingIrqForLPUART1() STM32CubeDuinoIrqHandlerForLPUART1();
+	ifIsPendingIrqForRNG() STM32CubeDuinoIrqHandlerForRNG();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or IS_UART_MODE */
 
@@ -3085,6 +3570,9 @@ void RNG2_IRQHandler(void) {
 void RTC_Alarm_IRQHandler(void) {
 	clearNvicIrqFor(RTC_Alarm_IRQn);
 	ifIsPendingIrqForRTC() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_ALRA() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_TSTAMP() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_WAKEUP() STM32CubeDuinoIrqHandlerForRTC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3094,6 +3582,9 @@ void RTC_Alarm_IRQHandler(void) {
 void RTC_IRQHandler(void) {
 	clearNvicIrqFor(RTC_IRQn);
 	ifIsPendingIrqForRTC() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_ALRA() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_TSTAMP() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_WAKEUP() STM32CubeDuinoIrqHandlerForRTC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3103,6 +3594,9 @@ void RTC_IRQHandler(void) {
 void RTC_S_IRQHandler(void) {
 	clearNvicIrqFor(RTC_S_IRQn);
 	ifIsPendingIrqForRTC() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_ALRA() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_TSTAMP() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_WAKEUP() STM32CubeDuinoIrqHandlerForRTC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3112,6 +3606,9 @@ void RTC_S_IRQHandler(void) {
 void RTC_TAMP_IRQHandler(void) {
 	clearNvicIrqFor(RTC_TAMP_IRQn);
 	ifIsPendingIrqForRTC() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_ALRA() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_TSTAMP() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_WAKEUP() STM32CubeDuinoIrqHandlerForRTC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3121,6 +3618,9 @@ void RTC_TAMP_IRQHandler(void) {
 void RTC_TAMP_LSECSS_IRQHandler(void) {
 	clearNvicIrqFor(RTC_TAMP_LSECSS_IRQn);
 	ifIsPendingIrqForRTC() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_ALRA() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_TSTAMP() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_WAKEUP() STM32CubeDuinoIrqHandlerForRTC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3130,6 +3630,9 @@ void RTC_TAMP_LSECSS_IRQHandler(void) {
 void RTC_TAMP_STAMP_CSS_LSE_IRQHandler(void) {
 	clearNvicIrqFor(RTC_TAMP_STAMP_CSS_LSE_IRQn);
 	ifIsPendingIrqForRTC() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_ALRA() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_TSTAMP() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_WAKEUP() STM32CubeDuinoIrqHandlerForRTC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3139,6 +3642,9 @@ void RTC_TAMP_STAMP_CSS_LSE_IRQHandler(void) {
 void RTC_TIMESTAMP_IRQHandler(void) {
 	clearNvicIrqFor(RTC_TIMESTAMP_IRQn);
 	ifIsPendingIrqForRTC() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_ALRA() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_TSTAMP() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_WAKEUP() STM32CubeDuinoIrqHandlerForRTC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3148,6 +3654,9 @@ void RTC_TIMESTAMP_IRQHandler(void) {
 void RTC_WKUP_ALARM_IRQHandler(void) {
 	clearNvicIrqFor(RTC_WKUP_ALARM_IRQn);
 	ifIsPendingIrqForRTC() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_ALRA() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_TSTAMP() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_WAKEUP() STM32CubeDuinoIrqHandlerForRTC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3157,6 +3666,9 @@ void RTC_WKUP_ALARM_IRQHandler(void) {
 void RTC_WKUP_IRQHandler(void) {
 	clearNvicIrqFor(RTC_WKUP_IRQn);
 	ifIsPendingIrqForRTC() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_ALRA() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_TSTAMP() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_WAKEUP() STM32CubeDuinoIrqHandlerForRTC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3295,7 +3807,7 @@ void SPI2_IRQHandler(void) {
 void SPI3_IRQHandler(void) {
 	clearNvicIrqFor(SPI3_IRQn);
 	STM32CubeDuinoIrqHandlerForI2S3();
-	STM32CubeDuinoIrqHandlerForSPI3();
+	ifIsPendingIrqForSPI3() STM32CubeDuinoIrqHandlerForSPI3();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3344,6 +3856,9 @@ void SWPMI1_IRQHandler(void) {
 void TAMPER_IRQHandler(void) {
 	clearNvicIrqFor(TAMPER_IRQn);
 	ifIsPendingIrqForRTC() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_ALRA() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_TSTAMP() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_WAKEUP() STM32CubeDuinoIrqHandlerForRTC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3353,6 +3868,9 @@ void TAMPER_IRQHandler(void) {
 void TAMPER_STAMP_IRQHandler(void) {
 	clearNvicIrqFor(TAMPER_STAMP_IRQn);
 	ifIsPendingIrqForRTC() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_ALRA() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_TSTAMP() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_WAKEUP() STM32CubeDuinoIrqHandlerForRTC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3371,6 +3889,9 @@ void TAMP_IRQHandler(void) {
 void TAMP_STAMP_IRQHandler(void) {
 	clearNvicIrqFor(TAMP_STAMP_IRQn);
 	ifIsPendingIrqForRTC() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_ALRA() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_TSTAMP() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_WAKEUP() STM32CubeDuinoIrqHandlerForRTC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3380,6 +3901,9 @@ void TAMP_STAMP_IRQHandler(void) {
 void TAMP_STAMP_LSECSS_IRQHandler(void) {
 	clearNvicIrqFor(TAMP_STAMP_LSECSS_IRQn);
 	ifIsPendingIrqForRTC() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_ALRA() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_TSTAMP() STM32CubeDuinoIrqHandlerForRTC();
+	ifIsPendingIrqForRTC_WAKEUP() STM32CubeDuinoIrqHandlerForRTC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3402,112 +3926,156 @@ void TEMP_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM1 break interrupt */
 void TIM1_BRK_IRQHandler(void) {
 	clearNvicIrqFor(TIM1_BRK_IRQn);
-	ifIsPendingIrqForTIM1() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_BRK() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CC() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CCU() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_TRG() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_UPD() STM32CubeDuinoIrqHandlerForTIM1();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM1 break interrupt and TIM9 global interrupt */
 void TIM1_BRK_TIM9_IRQHandler(void) {
 	clearNvicIrqFor(TIM1_BRK_TIM9_IRQn);
-	ifIsPendingIrqForTIM1() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_BRK() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CC() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CCU() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_TRG() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_UPD() STM32CubeDuinoIrqHandlerForTIM1();
 	STM32CubeDuinoIrqHandlerForTIM9();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM1 break interrupt and TIM15 global interrupt */
 void TIM1_BRK_TIM15_IRQHandler(void) {
 	clearNvicIrqFor(TIM1_BRK_TIM15_IRQn);
-	ifIsPendingIrqForTIM1() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_BRK() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CC() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CCU() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_TRG() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_UPD() STM32CubeDuinoIrqHandlerForTIM1();
 	ifIsPendingIrqForTIM15() STM32CubeDuinoIrqHandlerForTIM15();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM1 break, update, trigger and commutation interrupts */
 void TIM1_BRK_UP_TRG_COM_IRQHandler(void) {
 	clearNvicIrqFor(TIM1_BRK_UP_TRG_COM_IRQn);
-	ifIsPendingIrqForTIM1() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_BRK() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CC() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CCU() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_TRG() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_UPD() STM32CubeDuinoIrqHandlerForTIM1();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM1 capture compare interrupt */
 void TIM1_CC_IRQHandler(void) {
 	clearNvicIrqFor(TIM1_CC_IRQn);
-	ifIsPendingIrqForTIM1() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_BRK() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CC() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CCU() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_TRG() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_UPD() STM32CubeDuinoIrqHandlerForTIM1();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM1 trigger and commutation interrupts */
 void TIM1_TRG_COM_IRQHandler(void) {
 	clearNvicIrqFor(TIM1_TRG_COM_IRQn);
-	ifIsPendingIrqForTIM1() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_BRK() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CC() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CCU() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_TRG() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_UPD() STM32CubeDuinoIrqHandlerForTIM1();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM1 trigger and commutation interrupts and TIM11 global interrupt */
 void TIM1_TRG_COM_TIM11_IRQHandler(void) {
 	clearNvicIrqFor(TIM1_TRG_COM_TIM11_IRQn);
-	ifIsPendingIrqForTIM1() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_BRK() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CC() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CCU() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_TRG() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_UPD() STM32CubeDuinoIrqHandlerForTIM1();
 	STM32CubeDuinoIrqHandlerForTIM11();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM1 trigger and commutation interrupts and TIM17 global interrupt */
 void TIM1_TRG_COM_TIM17_IRQHandler(void) {
 	clearNvicIrqFor(TIM1_TRG_COM_TIM17_IRQn);
-	ifIsPendingIrqForTIM1() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_BRK() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CC() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CCU() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_TRG() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_UPD() STM32CubeDuinoIrqHandlerForTIM1();
 	ifIsPendingIrqForTIM17() STM32CubeDuinoIrqHandlerForTIM17();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM1 update interrupt */
 void TIM1_UP_IRQHandler(void) {
 	clearNvicIrqFor(TIM1_UP_IRQn);
-	ifIsPendingIrqForTIM1() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_BRK() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CC() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CCU() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_TRG() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_UPD() STM32CubeDuinoIrqHandlerForTIM1();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM1 update interrupt and TIM10 global interrupt */
 void TIM1_UP_TIM10_IRQHandler(void) {
 	clearNvicIrqFor(TIM1_UP_TIM10_IRQn);
-	ifIsPendingIrqForTIM1() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_BRK() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CC() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CCU() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_TRG() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_UPD() STM32CubeDuinoIrqHandlerForTIM1();
 	STM32CubeDuinoIrqHandlerForTIM10();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM1 update interrupt and TIM16 global interrupt */
 void TIM1_UP_TIM16_IRQHandler(void) {
 	clearNvicIrqFor(TIM1_UP_TIM16_IRQn);
-	ifIsPendingIrqForTIM1() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_BRK() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CC() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_CCU() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_TRG() STM32CubeDuinoIrqHandlerForTIM1();
+	ifIsPendingIrqForTIM1_UPD() STM32CubeDuinoIrqHandlerForTIM1();
 	ifIsPendingIrqForTIM16() STM32CubeDuinoIrqHandlerForTIM16();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM2 global interrupt */
 void TIM2_IRQHandler(void) {
 	clearNvicIrqFor(TIM2_IRQn);
@@ -3516,7 +4084,7 @@ void TIM2_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM3 global interrupt */
 void TIM3_IRQHandler(void) {
 	clearNvicIrqFor(TIM3_IRQn);
@@ -3525,16 +4093,16 @@ void TIM3_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM4 global interrupt */
 void TIM4_IRQHandler(void) {
 	clearNvicIrqFor(TIM4_IRQn);
-	STM32CubeDuinoIrqHandlerForTIM4();
+	ifIsPendingIrqForTIM4() STM32CubeDuinoIrqHandlerForTIM4();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM5 global interrupt */
 void TIM5_IRQHandler(void) {
 	clearNvicIrqFor(TIM5_IRQn);
@@ -3543,7 +4111,7 @@ void TIM5_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && defined(DAC_TRIGGER_NONE)) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(DAC_TRIGGER_NONE)) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM6 global interrupt, DAC channel1 and channel2 underrun error interrupts */
 void TIM6_DAC_IRQHandler(void) {
 	clearNvicIrqFor(TIM6_DAC_IRQn);
@@ -3555,18 +4123,18 @@ void TIM6_DAC_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or DAC_TRIGGER_NONE or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && defined(DAC_TRIGGER_NONE)) || (defined(SCD_ENABLE_TIMER) && (defined(LPTIM_PRESCALER_DIV1) || defined(TIM_CLOCKPRESCALER_DIV1)))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && !defined(STM32CUBEDUINO_ENABLE_TIMER) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(DAC_TRIGGER_NONE)) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && !defined(STM32CUBEDUINO_ENABLE_TIMER) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(LPTIM_PRESCALER_DIV1)) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && !defined(STM32CUBEDUINO_ENABLE_TIMER) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM6, DAC1 and LPTIM1 interrupts (LPTIM1 interrupt through EXTI line 29) */
 void TIM6_DAC_LPTIM1_IRQHandler(void) {
 	clearNvicIrqFor(TIM6_DAC_LPTIM1_IRQn);
 	STM32CubeDuinoIrqHandlerForDAC1();
-	STM32CubeDuinoIrqHandlerForLPTIM1();
+	ifIsPendingIrqForLPTIM1() STM32CubeDuinoIrqHandlerForLPTIM1();
 	ifIsPendingIrqForTIM6() STM32CubeDuinoIrqHandlerForTIM6();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or DAC_TRIGGER_NONE or LPTIM_PRESCALER_DIV1 or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && defined(DAC_TRIGGER_NONE)) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(DAC_TRIGGER_NONE)) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM6 global interrupt and DAC1 underrun error interrupts */
 void TIM6_DAC1_IRQHandler(void) {
 	clearNvicIrqFor(TIM6_DAC1_IRQn);
@@ -3576,7 +4144,7 @@ void TIM6_DAC1_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or DAC_TRIGGER_NONE or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM6 global interrupt */
 void TIM6_IRQHandler(void) {
 	clearNvicIrqFor(TIM6_IRQn);
@@ -3585,7 +4153,7 @@ void TIM6_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && defined(DAC_TRIGGER_NONE)) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(DAC_TRIGGER_NONE)) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM7 global interrupt, DAC2 and DAC4 channel underrun error interrupts */
 void TIM7_DAC_IRQHandler(void) {
 	clearNvicIrqFor(TIM7_DAC_IRQn);
@@ -3596,7 +4164,7 @@ void TIM7_DAC_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or DAC_TRIGGER_NONE or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && defined(DAC_TRIGGER_NONE)) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(DAC_TRIGGER_NONE)) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM7 global and DAC2 underrun error interrupts */
 void TIM7_DAC2_IRQHandler(void) {
 	clearNvicIrqFor(TIM7_DAC2_IRQn);
@@ -3606,7 +4174,7 @@ void TIM7_DAC2_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or DAC_TRIGGER_NONE or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM7 global interrupt */
 void TIM7_IRQHandler(void) {
 	clearNvicIrqFor(TIM7_IRQn);
@@ -3615,17 +4183,17 @@ void TIM7_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && (defined(LPTIM_PRESCALER_DIV1) || defined(TIM_CLOCKPRESCALER_DIV1)))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_ENABLE_TIMER) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(LPTIM_PRESCALER_DIV1)) || (!defined(STM32CUBEDUINO_ENABLE_TIMER) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM7 and LPTIM2 interrupts (LPTIM2 interrupt through EXTI line 30) */
 void TIM7_LPTIM2_IRQHandler(void) {
 	clearNvicIrqFor(TIM7_LPTIM2_IRQn);
-	STM32CubeDuinoIrqHandlerForLPTIM2();
+	ifIsPendingIrqForLPTIM2() STM32CubeDuinoIrqHandlerForLPTIM2();
 	ifIsPendingIrqForTIM7() STM32CubeDuinoIrqHandlerForTIM7();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or LPTIM_PRESCALER_DIV1 or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM8 break global interrupt */
 void TIM8_BRK_IRQHandler(void) {
 	clearNvicIrqFor(TIM8_BRK_IRQn);
@@ -3634,7 +4202,7 @@ void TIM8_BRK_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM8 break interrupt and TIM12 global interrupt */
 void TIM8_BRK_TIM12_IRQHandler(void) {
 	clearNvicIrqFor(TIM8_BRK_TIM12_IRQn);
@@ -3644,7 +4212,7 @@ void TIM8_BRK_TIM12_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM8 capture compare interrupt */
 void TIM8_CC_IRQHandler(void) {
 	clearNvicIrqFor(TIM8_CC_IRQn);
@@ -3653,7 +4221,7 @@ void TIM8_CC_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM8 trigger and commutation interrupts */
 void TIM8_TRG_COM_IRQHandler(void) {
 	clearNvicIrqFor(TIM8_TRG_COM_IRQn);
@@ -3662,7 +4230,7 @@ void TIM8_TRG_COM_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM8 trigger and commutation interrupts and TIM14 global interrupt */
 void TIM8_TRG_COM_TIM14_IRQHandler(void) {
 	clearNvicIrqFor(TIM8_TRG_COM_TIM14_IRQn);
@@ -3672,7 +4240,7 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM8 update interrupt */
 void TIM8_UP_IRQHandler(void) {
 	clearNvicIrqFor(TIM8_UP_IRQn);
@@ -3681,7 +4249,7 @@ void TIM8_UP_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM8 update interrupt and TIM13 global interrupt */
 void TIM8_UP_TIM13_IRQHandler(void) {
 	clearNvicIrqFor(TIM8_UP_TIM13_IRQn);
@@ -3691,7 +4259,7 @@ void TIM8_UP_TIM13_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM9 global interrupt */
 void TIM9_IRQHandler(void) {
 	clearNvicIrqFor(TIM9_IRQn);
@@ -3700,7 +4268,7 @@ void TIM9_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM10 global interrupt */
 void TIM10_IRQHandler(void) {
 	clearNvicIrqFor(TIM10_IRQn);
@@ -3709,7 +4277,7 @@ void TIM10_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM11 global interrupt */
 void TIM11_IRQHandler(void) {
 	clearNvicIrqFor(TIM11_IRQn);
@@ -3718,7 +4286,7 @@ void TIM11_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM12 global interrupt */
 void TIM12_IRQHandler(void) {
 	clearNvicIrqFor(TIM12_IRQn);
@@ -3727,7 +4295,7 @@ void TIM12_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM13 global interrupt */
 void TIM13_IRQHandler(void) {
 	clearNvicIrqFor(TIM13_IRQn);
@@ -3736,7 +4304,7 @@ void TIM13_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM14 global interrupt */
 void TIM14_IRQHandler(void) {
 	clearNvicIrqFor(TIM14_IRQn);
@@ -3745,7 +4313,7 @@ void TIM14_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM15 global interrupt */
 void TIM15_IRQHandler(void) {
 	clearNvicIrqFor(TIM15_IRQn);
@@ -3754,7 +4322,7 @@ void TIM15_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM16 global interrupt */
 void TIM16_IRQHandler(void) {
 	clearNvicIrqFor(TIM16_IRQn);
@@ -3763,7 +4331,7 @@ void TIM16_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM17 global interrupt */
 void TIM17_IRQHandler(void) {
 	clearNvicIrqFor(TIM17_IRQn);
@@ -3772,7 +4340,7 @@ void TIM17_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && defined(DAC_TRIGGER_NONE)) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(DAC_TRIGGER_NONE)) || (!defined(STM32CUBEDUINO_DISABLE_DAC) && !defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM18 global interrupt and DAC2 underrun error interrupt */
 void TIM18_DAC2_IRQHandler(void) {
 	clearNvicIrqFor(TIM18_DAC2_IRQn);
@@ -3782,7 +4350,7 @@ void TIM18_DAC2_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or DAC_TRIGGER_NONE or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM19 global interrupt */
 void TIM19_IRQHandler(void) {
 	clearNvicIrqFor(TIM19_IRQn);
@@ -3791,7 +4359,7 @@ void TIM19_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM20 break interrupt */
 void TIM20_BRK_IRQHandler(void) {
 	clearNvicIrqFor(TIM20_BRK_IRQn);
@@ -3800,7 +4368,7 @@ void TIM20_BRK_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM20 capture compare interrupt */
 void TIM20_CC_IRQHandler(void) {
 	clearNvicIrqFor(TIM20_CC_IRQn);
@@ -3809,7 +4377,7 @@ void TIM20_CC_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM20 trigger and commutation interrupts */
 void TIM20_TRG_COM_IRQHandler(void) {
 	clearNvicIrqFor(TIM20_TRG_COM_IRQn);
@@ -3818,7 +4386,7 @@ void TIM20_TRG_COM_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM20 update interrupt */
 void TIM20_UP_IRQHandler(void) {
 	clearNvicIrqFor(TIM20_UP_IRQn);
@@ -3827,7 +4395,7 @@ void TIM20_UP_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM21 global interrupt */
 void TIM21_IRQHandler(void) {
 	clearNvicIrqFor(TIM21_IRQn);
@@ -3836,7 +4404,7 @@ void TIM21_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM22 global interrupt */
 void TIM22_IRQHandler(void) {
 	clearNvicIrqFor(TIM22_IRQn);
@@ -3845,7 +4413,7 @@ void TIM22_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM23 global interrupt */
 void TIM23_IRQHandler(void) {
 	clearNvicIrqFor(TIM23_IRQn);
@@ -3854,7 +4422,7 @@ void TIM23_IRQHandler(void) {
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or TIM_CLOCKPRESCALER_DIV1 */
 
 
-#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (defined(SCD_ENABLE_TIMER) && defined(TIM_CLOCKPRESCALER_DIV1))
+#if defined(STM32CUBEDUINO_MAP_ALL_IRQS) || (!defined(STM32CUBEDUINO_DISABLE_ALL_TIMERS) && defined(TIM_CLOCKPRESCALER_DIV1))
 /** TIM24 global interrupt */
 void TIM24_IRQHandler(void) {
 	clearNvicIrqFor(TIM24_IRQn);
@@ -3867,7 +4435,8 @@ void TIM24_IRQHandler(void) {
 /** Touch sensing controller interrupt */
 void TSC_IRQHandler(void) {
 	clearNvicIrqFor(TSC_IRQn);
-	ifIsPendingIrqForTSC() STM32CubeDuinoIrqHandlerForTSC();
+	ifIsPendingIrqForTSC_EOA() STM32CubeDuinoIrqHandlerForTSC();
+	ifIsPendingIrqForTSC_MCE() STM32CubeDuinoIrqHandlerForTSC();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3930,7 +4499,7 @@ void UART10_IRQHandler(void) {
 /** UCPD1 interrupt / UCPD1 wake-up interrupt through EXTI line 41 */
 void UCPD1_IRQHandler(void) {
 	clearNvicIrqFor(UCPD1_IRQn);
-	STM32CubeDuinoIrqHandlerForUCPD1();
+	ifIsPendingIrqForUCPD1() STM32CubeDuinoIrqHandlerForUCPD1();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3939,8 +4508,8 @@ void UCPD1_IRQHandler(void) {
 /** UCPD1 and UCPD2 interrupts / UCPD1 and UCPD2 wake-up interrupts through EXTI lines 32 and 33 */
 void UCPD1_2_IRQHandler(void) {
 	clearNvicIrqFor(UCPD1_2_IRQn);
-	STM32CubeDuinoIrqHandlerForUCPD1();
-	STM32CubeDuinoIrqHandlerForUCPD2();
+	ifIsPendingIrqForUCPD1() STM32CubeDuinoIrqHandlerForUCPD1();
+	ifIsPendingIrqForUCPD2() STM32CubeDuinoIrqHandlerForUCPD2();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -3986,7 +4555,7 @@ void USART3_4_IRQHandler(void) {
 /** USART3, USART4 and LPUART1 interrupts / LPUART1 wake-up interrupt through EXTI line 28 */
 void USART3_4_LPUART1_IRQHandler(void) {
 	clearNvicIrqFor(USART3_4_LPUART1_IRQn);
-	STM32CubeDuinoIrqHandlerForLPUART1();
+	ifIsPendingIrqForLPUART1() STM32CubeDuinoIrqHandlerForLPUART1();
 	ifIsPendingIrqForUSART3() STM32CubeDuinoIrqHandlerForUSART3();
 	ifIsPendingIrqForUSART4() STM32CubeDuinoIrqHandlerForUSART4();
 }
@@ -4069,7 +4638,7 @@ void USBH_OHCI_IRQHandler(void) {
 /** USB wake-up interrupt through EXTI line 18 */
 void USBWakeUp_IRQHandler(void) {
 	clearNvicIrqFor(USBWakeUp_IRQn);
-	STM32CubeDuinoIrqHandlerForUSB();
+	ifIsPendingIrqForUSB() STM32CubeDuinoIrqHandlerForUSB();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or PCD_PHY_EMBEDDED */
 
@@ -4078,7 +4647,7 @@ void USBWakeUp_IRQHandler(void) {
 /** USB wake-up interrupt through EXTI line 18 remap */
 void USBWakeUp_RMP_IRQHandler(void) {
 	clearNvicIrqFor(USBWakeUp_RMP_IRQn);
-	STM32CubeDuinoIrqHandlerForUSB();
+	ifIsPendingIrqForUSB() STM32CubeDuinoIrqHandlerForUSB();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or PCD_PHY_EMBEDDED */
 
@@ -4087,7 +4656,7 @@ void USBWakeUp_RMP_IRQHandler(void) {
 /** USB FS global interrupt / USB FS wake-up interrupt through EXTI line 34 */
 void USB_FS_IRQHandler(void) {
 	clearNvicIrqFor(USB_FS_IRQn);
-	STM32CubeDuinoIrqHandlerForUSB();
+	ifIsPendingIrqForUSB() STM32CubeDuinoIrqHandlerForUSB();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or PCD_PHY_EMBEDDED */
 
@@ -4096,7 +4665,7 @@ void USB_FS_IRQHandler(void) {
 /** USB FS wake-up interrupt through EXTI line 18 */
 void USB_FS_WKUP_IRQHandler(void) {
 	clearNvicIrqFor(USB_FS_WKUP_IRQn);
-	STM32CubeDuinoIrqHandlerForUSB();
+	ifIsPendingIrqForUSB() STM32CubeDuinoIrqHandlerForUSB();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or PCD_PHY_EMBEDDED */
 
@@ -4106,7 +4675,7 @@ void USB_FS_WKUP_IRQHandler(void) {
 void USB_HP_CAN_TX_IRQHandler(void) {
 	clearNvicIrqFor(USB_HP_CAN_TX_IRQn);
 	ifIsPendingIrqForCAN() STM32CubeDuinoIrqHandlerForCAN();
-	STM32CubeDuinoIrqHandlerForUSB();
+	ifIsPendingIrqForUSB() STM32CubeDuinoIrqHandlerForUSB();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or PCD_PHY_EMBEDDED */
 
@@ -4116,7 +4685,7 @@ void USB_HP_CAN_TX_IRQHandler(void) {
 void USB_HP_CAN1_TX_IRQHandler(void) {
 	clearNvicIrqFor(USB_HP_CAN1_TX_IRQn);
 	ifIsPendingIrqForCAN() STM32CubeDuinoIrqHandlerForCAN();
-	STM32CubeDuinoIrqHandlerForUSB();
+	ifIsPendingIrqForUSB() STM32CubeDuinoIrqHandlerForUSB();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or PCD_PHY_EMBEDDED */
 
@@ -4125,7 +4694,7 @@ void USB_HP_CAN1_TX_IRQHandler(void) {
 /** USB high priority global interrupt */
 void USB_HP_IRQHandler(void) {
 	clearNvicIrqFor(USB_HP_IRQn);
-	STM32CubeDuinoIrqHandlerForUSB();
+	ifIsPendingIrqForUSB() STM32CubeDuinoIrqHandlerForUSB();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or PCD_PHY_EMBEDDED */
 
@@ -4134,7 +4703,7 @@ void USB_HP_IRQHandler(void) {
 /** USB global interrupt / USB wake-up interrupt through EXTI line 18 */
 void USB_IRQHandler(void) {
 	clearNvicIrqFor(USB_IRQn);
-	STM32CubeDuinoIrqHandlerForUSB();
+	ifIsPendingIrqForUSB() STM32CubeDuinoIrqHandlerForUSB();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or PCD_PHY_EMBEDDED */
 
@@ -4144,7 +4713,7 @@ void USB_IRQHandler(void) {
 void USB_LP_CAN_RX0_IRQHandler(void) {
 	clearNvicIrqFor(USB_LP_CAN_RX0_IRQn);
 	ifIsPendingIrqForCAN() STM32CubeDuinoIrqHandlerForCAN();
-	STM32CubeDuinoIrqHandlerForUSB();
+	ifIsPendingIrqForUSB() STM32CubeDuinoIrqHandlerForUSB();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or PCD_PHY_EMBEDDED */
 
@@ -4154,7 +4723,7 @@ void USB_LP_CAN_RX0_IRQHandler(void) {
 void USB_LP_CAN1_RX0_IRQHandler(void) {
 	clearNvicIrqFor(USB_LP_CAN1_RX0_IRQn);
 	ifIsPendingIrqForCAN() STM32CubeDuinoIrqHandlerForCAN();
-	STM32CubeDuinoIrqHandlerForUSB();
+	ifIsPendingIrqForUSB() STM32CubeDuinoIrqHandlerForUSB();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or PCD_PHY_EMBEDDED */
 
@@ -4163,7 +4732,7 @@ void USB_LP_CAN1_RX0_IRQHandler(void) {
 /** USB low priority interrupt, USB wake-up interrupt through EXTI line 28 */
 void USB_LP_IRQHandler(void) {
 	clearNvicIrqFor(USB_LP_IRQn);
-	STM32CubeDuinoIrqHandlerForUSB();
+	ifIsPendingIrqForUSB() STM32CubeDuinoIrqHandlerForUSB();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS or PCD_PHY_EMBEDDED */
 
@@ -4172,7 +4741,9 @@ void USB_LP_IRQHandler(void) {
 /** Interrupt for all 6 wake-up pins */
 void WAKEUP_PIN_IRQHandler(void) {
 	clearNvicIrqFor(WAKEUP_PIN_IRQn);
-	ifIsPendingIrqForPWR() STM32CubeDuinoIrqHandlerForPWR();
+	ifIsPendingIrqForPVDOUT() STM32CubeDuinoIrqHandlerForPWR();
+	ifIsPendingIrqForPVMOUT() STM32CubeDuinoIrqHandlerForPWR();
+	ifIsPendingIrqForVDDIO2() STM32CubeDuinoIrqHandlerForPWR();
 }
 #endif /* STM32CUBEDUINO_MAP_ALL_IRQS */
 
@@ -4181,6 +4752,7 @@ void WAKEUP_PIN_IRQHandler(void) {
 /** Window watchdog interrupt */
 void WWDG_IRQHandler(void) {
 	clearNvicIrqFor(WWDG_IRQn);
+	ifIsPendingIrqForEWDG() STM32CubeDuinoIrqHandlerForWWDG();
 	ifIsPendingIrqForWWDG() STM32CubeDuinoIrqHandlerForWWDG();
 	STM32CubeDuinoIrqHandlerForWWDG1();
 	STM32CubeDuinoIrqHandlerForWWDG2();

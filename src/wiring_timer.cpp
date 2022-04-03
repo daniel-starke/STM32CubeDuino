@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-10-21
- * @version 2022-03-27
+ * @version 2022-03-29
  */
 #include "Arduino.h"
 #include "scdinternal/macro.h"
@@ -12,8 +12,6 @@
 
 #ifdef LL_RCC_CALC_SYSCLK_FREQ
 #define _GetClockFreqOfHCLK() RCC_GetHCLKClockFreq(LL_RCC_CALC_SYSCLK_FREQ(RCC_GetSystemClockFreq(), LL_RCC_GetSysPrescaler()))
-#else /* not LL_RCC_CALC_SYSCLK_FREQ */
-#define _GetClockFreqOfHCLK() RCC_GetHCLKClockFreq(RCC_GetSystemClockFreq())
 #endif /* not LL_RCC_CALC_SYSCLK_FREQ */
 
 
@@ -35,12 +33,12 @@ DEF_NO_FN_WRAPPER(uint32_t, HAL_RCC_GetPCLK4Freq_Wrapper, HAL_RCC_GetPCLK4Freq, 
 
 
 /* C++ SFINAE for handling the absence and all variances of RCC_GetPCLK1ClockFreq() accordingly */
-#ifdef __LL_RCC_CALC_PCLK1_FREQ
+#ifdef _GetClockFreqOfHCLK
 template <typename ...Ts>
 static inline auto RCC_GetPCLK1ClockFreq_Wrapper_(const int, Ts... args) -> decltype(RCC_GetPCLK1ClockFreq(_GetClockFreqOfHCLK(), args...)) {
 	return RCC_GetPCLK1ClockFreq(_GetClockFreqOfHCLK(), args...);
 }
-#endif /* not __LL_RCC_CALC_PCLK1_FREQ */
+#endif /* not _GetClockFreqOfHCLK */
 
 template <typename ...Ts>
 static inline auto RCC_GetPCLK1ClockFreq_Wrapper_(const int, Ts... args) -> decltype(RCC_GetPCLK1ClockFreq(args...)) {
@@ -59,12 +57,12 @@ static inline uint32_t RCC_GetPCLK1ClockFreq_Wrapper(Ts... args) {
 
 
 /* C++ SFINAE for handling the absence and all variances of RCC_GetPCLK2ClockFreq() accordingly */
-#ifdef __LL_RCC_CALC_PCLK2_FREQ
+#ifdef _GetClockFreqOfHCLK
 template <typename ...Ts>
 static inline auto RCC_GetPCLK2ClockFreq_Wrapper_(const int, Ts... args) -> decltype(RCC_GetPCLK2ClockFreq(_GetClockFreqOfHCLK(), args...)) {
 	return RCC_GetPCLK2ClockFreq(_GetClockFreqOfHCLK(), args...);
 }
-#endif /* not __LL_RCC_CALC_PCLK2_FREQ */
+#endif /* not _GetClockFreqOfHCLK */
 
 template <typename ...Ts>
 static inline auto RCC_GetPCLK2ClockFreq_Wrapper_(const int, Ts... args) -> decltype(RCC_GetPCLK2ClockFreq(args...)) {
@@ -83,12 +81,12 @@ static inline uint32_t RCC_GetPCLK2ClockFreq_Wrapper(Ts... args) {
 
 
 /* C++ SFINAE for handling the absence and all variances of RCC_GetPCLK3ClockFreq() accordingly */
-#ifdef __LL_RCC_CALC_PCLK3_FREQ
+#ifdef _GetClockFreqOfHCLK
 template <typename ...Ts>
 static inline auto RCC_GetPCLK3ClockFreq_Wrapper_(const int, Ts... args) -> decltype(RCC_GetPCLK3ClockFreq(_GetClockFreqOfHCLK(), args...)) {
 	return RCC_GetPCLK3ClockFreq(_GetClockFreqOfHCLK(), args...);
 }
-#endif /* not __LL_RCC_CALC_PCLK3_FREQ */
+#endif /* not _GetClockFreqOfHCLK */
 
 template <typename ...Ts>
 static inline auto RCC_GetPCLK3ClockFreq_Wrapper_(const int, Ts... args) -> decltype(RCC_GetPCLK3ClockFreq(args...)) {
@@ -107,12 +105,12 @@ static inline uint32_t RCC_GetPCLK3ClockFreq_Wrapper(Ts... args) {
 
 
 /* C++ SFINAE for handling the absence and all variances of RCC_GetPCLK4ClockFreq() accordingly */
-#ifdef __LL_RCC_CALC_PCLK4_FREQ
+#ifdef _GetClockFreqOfHCLK
 template <typename ...Ts>
 static inline auto RCC_GetPCLK4ClockFreq_Wrapper_(const int, Ts... args) -> decltype(RCC_GetPCLK4ClockFreq(_GetClockFreqOfHCLK(), args...)) {
 	return RCC_GetPCLK4ClockFreq(_GetClockFreqOfHCLK(), args...);
 }
-#endif /* not __LL_RCC_CALC_PCLK4_FREQ */
+#endif /* not _GetClockFreqOfHCLK */
 
 template <typename ...Ts>
 static inline auto RCC_GetPCLK4ClockFreq_Wrapper_(const int, Ts... args) -> decltype(RCC_GetPCLK4ClockFreq(args...)) {

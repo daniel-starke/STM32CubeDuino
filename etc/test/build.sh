@@ -3,13 +3,15 @@
 # @author Daniel Starke
 # @copyright Copyright 2022 Daniel Starke
 # @date 2022-03-20
-# @version 2022-03-20
+# @version 2022-03-29
 #
 # Running from within the library root directory.
 # The following environment variables are used:
 # SERIES - MCU series (e.g. l4)
 # ARCH   - MCU architecture (e.g. cortex-m4)
 # MCU    - MCU name (e.g. stm32l432kcu6)
+#
+# Optionally, set SIMPLE=1 to build only the trivial case.
 
 Error() {
 	echo "Error: $@"
@@ -27,6 +29,12 @@ sed "s/??/$SERIES/g" etc/test/src/board/board.hpp > test/src/board/board.hpp || 
 python BuildScript.py "${ARCH}" "${MCU}" "test_board" > test/boards/test_board.json || Error "Failed to build test_board.json for ${MCU} (${ARCH})."
 
 cd test || Error "Failed to change directory to \"test\"."
+
+# Build only trivial case.
+if [ "x1" = "x${SIMPLE}" ]; then
+	pio run || Error "Failed to build blinky for ${MCU} (${ARCH})."
+	exit 0
+fi
 
 # Build with different settings.
 while read DEF
