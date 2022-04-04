@@ -186,8 +186,8 @@ FAQ
 **Q:** How do I generate a custom `initVariant()` function for my board?  
 **A:** Download the [STM32CubeIDE](https://www.st.com/en/development-tools/stm32cubeide.html). Create a new `STM32 Project` for the used chip in there and activate all relevant peripherals. Complete the clock configuration and generate the code. The content from the generated `SystemClock_Config()` function in `main.c` is the base for the new `initVariant()` function. Finally, replace all calls to `Error_Handler()` with `systemErrorHandler()`. See also [Getting Started](doc/starting.md).
 
-**Q:** Passing `-flto` to the compiler and linker breaks my build. The firmware is not starting anymore.
-**A:** The is most likely due to an old bug in [binutils](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=83967). Try to update to a [more recent toolchain](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm).
+**Q:** Passing `-flto` to the compiler and linker breaks my build. The firmware is not starting anymore.  
+**A:** This is most likely due to an old bug in [binutils](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=83967). Try to update to a [more recent toolchain](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm).
 
 Issues
 ======
