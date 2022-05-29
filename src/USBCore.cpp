@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-05-21
- * @version 2022-03-25
+ * @version 2022-04-18
  * 
  * Control Endpoint:
  * @verbatim
@@ -180,6 +180,7 @@
 }()
 
 
+/** STM32 HAL specific variable needed in usbFrameNumber(). */
 extern uint32_t USBx_BASE;
 
 
@@ -454,6 +455,85 @@ static void usbTriggerSend(_UsbTxBuffer & buf, const uint8_t epNum, const bool a
 
 
 /**
+ * Send data to an endpoint. Block until the transmission finished.
+ * This function is needed to handle flags that may get passed together
+ * with the endpoint in `USB_Send()`.
+ * 
+ * @param[in] flags - `TRANSFER_ZERO`, `TRANSFER_RELEASE` and/or `TRANSFER_PGM`
+ * @param[in] ep - endpoint number
+ * @param[in] data - data buffer
+ * @param[in] len - data length
+ * @return bytes transmitted
+ */
+static uint32_t sendHelper(const uint8_t flags, const uint32_t ep, const void * data, uint32_t len) {
+	if ( ! _usbConfiguration ) return uint32_t(-1);
+	const uint8_t epNum = uint8_t(ep & 0xF);
+	if (usbTxBuffer(epNum) == NULL) {
+		if ( ! sendOrBlock(USB_ENDPOINT_IN(ep), data, len, true) ) return 0;
+	} else {
+		_UsbTxBuffer & buf = *usbTxBuffer(epNum);
+		bool canWait = false;
+		const bool zlp = (len == 0);
+		const bool interruptsEnabled = ((__get_PRIMASK() & 0x1) == 0);
+		const uint16_t epMask = uint16_t(1 << uint16_t(epNum));
+		if ( interruptsEnabled ) {
+			const uint32_t irqExecutionNumber = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
+			if (irqExecutionNumber == 0 || NVIC_GetPriority(IRQn_Type(irqExecutionNumber - 16)) > usbNvicGetLowestPriority()) {
+				/* USB interrupt is enabled and we were not called from an interrupt with higher priority */
+				canWait = true;
+			}
+		}
+		/* wait until space is available and add to queue */
+		if ( canWait ) {
+			/* wait until space is available and add to queue */
+			buf.commitLock = true;
+			__DMB(); __DSB(); __ISB(); /* data and instruction barrier */
+			const uint8_t * dataBuf = reinterpret_cast<const uint8_t *>(data);
+			for (uint32_t i = 0; i < len; dataBuf++, i++) {
+				if ( buf.fifo.push(((flags & TRANSFER_ZERO) == 0) ? *dataBuf : 0) ) continue;
+				while ( buf.fifo.full() ) {
+					if ((txPendingEp & epMask) == 0) {
+						usbTriggerSend(buf, epNum, false);
+						break;
+					}
+					__WFI();
+				}
+				buf.fifo.blockingPush(((flags & TRANSFER_ZERO) == 0) ? *dataBuf : 0);
+			}
+			buf.commitLock = false;
+		} else {
+			/* add to queue or fail if no space is available, because there is currently no chance to get data out */
+			uint32_t written;
+			if ((flags & TRANSFER_ZERO) == 0) {
+				written = buf.fifo.write(reinterpret_cast<const uint8_t *>(data), len);
+				if (written < len && (txPendingEp & epMask) == 0) {
+					usbTriggerSend(buf, epNum, false);
+					written += buf.fifo.write(reinterpret_cast<const uint8_t *>(data) + written, uint32_t(len - written));
+				}
+			} else {
+				/* write only zero bytes */
+				for (written = 0; written < len && buf.fifo.push(0); written++);
+				if (written < len && (txPendingEp & epMask) == 0) {
+					usbTriggerSend(buf, epNum, false);
+					for (; written < len && buf.fifo.push(0); written++);
+				}
+			}
+			len = written;
+		}
+		/* the interrupt routine may send out the queued data at this point */
+		__DMB(); __DSB(); __ISB(); /* data and instruction barrier */
+		if ((txPendingEp & epMask) != 0) return len;
+		if ((flags & TRANSFER_RELEASE) != 0 || zlp) {
+			/* start endpoint transmission from idle state */
+			buf.fifo.commitBlock();
+			usbTriggerSend(buf, epNum, zlp);
+		}
+	}
+	return len;
+}
+
+
+/**
  * Receives data on the given endpoint. The operation fails if there is still
  * a previous data reception ongoing. It may be set blocking until completion.
  * 
@@ -609,7 +689,9 @@ void USBDeviceClass::standby() {
  */
 bool USBDeviceClass::handleClassInterfaceSetup(USBSetup & setup) {
 	bool res = PluggableUSB().setup(setup);
-	if (res == false || setup.bmRequestType == REQUEST_HOSTTODEVICE_CLASS_INTERFACE) this->sendZlp(0);
+	if (res == false || setup.bmRequestType == REQUEST_HOSTTODEVICE_CLASS_INTERFACE) {
+		this->sendZlp(0);
+	}
 	return res;
 }
 
@@ -647,7 +729,9 @@ bool USBDeviceClass::handleStandardSetup(USBSetup & setup) {
 		switch (wValue) {
 		case ENDPOINT_HALT:
 			isEndpointHalt = false;
-			if ((ep & 0xF) != 0) HAL_PCD_EP_ClrStall(hPcdUsb, ep);
+			if ((ep & 0xF) != 0) {
+				HAL_PCD_EP_ClrStall(hPcdUsb, ep);
+			}
 			this->sendZlp(0);
 			break;
 		case DEVICE_REMOTE_WAKEUP:
@@ -667,7 +751,9 @@ bool USBDeviceClass::handleStandardSetup(USBSetup & setup) {
 		case ENDPOINT_HALT:
 			/* halt endpoint */
 			isEndpointHalt = true;
-			if ((ep & 0xF) != 0 && setup.wLength == 0) HAL_PCD_EP_SetStall(hPcdUsb, ep);
+			if ((ep & 0xF) != 0 && setup.wLength == 0) {
+				HAL_PCD_EP_SetStall(hPcdUsb, ep);
+			}
 			this->sendZlp(0);
 			break;
 		case DEVICE_REMOTE_WAKEUP:
@@ -817,7 +903,9 @@ uint32_t USBDeviceClass::sendControl(const void * data, uint32_t len) {
 uint32_t USBDeviceClass::recvControl(void * data, uint32_t len) {
 	const uint32_t receivedLen = this->available(USB_ENDPOINT_OUT(0));
 	const uint32_t received = min(len, receivedLen);
-	if (received > 0) memcpy(data, _usbCtrlRecvBuf, size_t(received));
+	if (received > 0) {
+		memcpy(data, _usbCtrlRecvBuf, size_t(received));
+	}
 	return received;
 }
 
@@ -984,58 +1072,7 @@ void USBDeviceClass::initEP(uint32_t ep, uint32_t config) {
  * @return bytes transmitted
  */
 uint32_t USBDeviceClass::send(uint32_t ep, const void * data, uint32_t len) {
-	if ( ! _usbConfiguration ) return uint32_t(-1);
-	const uint8_t epNum = uint8_t(ep & 0xF);
-	if (usbTxBuffer(epNum) == NULL) {
-		if ( ! sendOrBlock(USB_ENDPOINT_IN(ep), data, len, true) ) return 0;
-	} else {
-		_UsbTxBuffer & buf = *usbTxBuffer(epNum);
-		bool canWait = false;
-		const bool zlp = (len == 0);
-		const bool interruptsEnabled = ((__get_PRIMASK() & 0x1) == 0);
-		const uint16_t epMask = uint16_t(1 << uint16_t(epNum));
-		if ( interruptsEnabled ) {
-			const uint32_t irqExecutionNumber = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
-			if (irqExecutionNumber == 0 || NVIC_GetPriority(IRQn_Type(irqExecutionNumber - 16)) > usbNvicGetLowestPriority()) {
-				/* USB interrupt is enabled and we were not called from an interrupt with higher priority */
-				canWait = true;
-			}
-		}
-		/* wait until space is available and add to queue */
-		if ( canWait ) {
-			/* wait until space is available and add to queue */
-			buf.commitLock = true;
-			__DMB(); __DSB(); __ISB(); /* data and instruction barrier */
-			const uint8_t * dataBuf = reinterpret_cast<const uint8_t *>(data);
-			for (uint32_t i = 0; i < len; dataBuf++, i++) {
-				if ( buf.fifo.push(*dataBuf) ) continue;
-				while ( buf.fifo.full() ) {
-					if ((txPendingEp & epMask) == 0) {
-						usbTriggerSend(buf, epNum, false);
-						break;
-					}
-					__WFI();
-				}
-				buf.fifo.blockingPush(*dataBuf);
-			}
-			buf.commitLock = false;
-		} else {
-			/* add to queue or fail if no space is available, because there is currently no chance to get data out */
-			uint32_t written = buf.fifo.write(reinterpret_cast<const uint8_t *>(data), len);
-			if (written < len && (txPendingEp & epMask) == 0) {
-				usbTriggerSend(buf, epNum, false);
-				written += buf.fifo.write(reinterpret_cast<const uint8_t *>(data), len);
-			}
-			len = written;
-		}
-		/* the interrupt routine may send out the queued data at this point */
-		__DMB(); __DSB(); __ISB(); /* data and instruction barrier */
-		if ((txPendingEp & epMask) != 0) return len;
-		/* start endpoint transmission from idle state */
-		buf.fifo.commitBlock();
-		usbTriggerSend(buf, epNum, zlp);
-	}
-	return len;
+	return sendHelper(TRANSFER_RELEASE, ep, data, len);
 }
 
 
@@ -1231,31 +1268,71 @@ void USBDeviceClass::stall(uint32_t ep) {
 }
 
 
+/**
+ * USB device class instance.
+ */
 USBDeviceClass USBDevice;
 
 
 /* Arduino legacy functions */
+/**
+ * Sends the given data on the control endpoint.
+ * 
+ * @param[in] flags - `TRANSFER_ZERO`, `TRANSFER_RELEASE` and/or `TRANSFER_PGM`
+ * @param[in] data - data buffer
+ * @param[in] len - data length
+ * @return processed data length
+ */
 int USB_SendControl(uint8_t /* flags */, const void * data, int len) {
 	return int(USBDevice.sendControl(data, len));
 }
 
 
+/**
+ * Received data from the control endpoint. This function blocks until
+ * some data has been received.
+ * 
+ * @param[out] data - data buffer
+ * @param[in] len - buffer size
+ * @return received data length
+ */
 int USB_RecvControl(void * data, int len) {
 	return int(USBDevice.recvControl(data, len));
 }
 
 
+/**
+ * Received data from the control endpoint. This function blocks until
+ * some data has been received.
+ * 
+ * @param[out] data - data buffer
+ * @param[in] len - buffer size
+ * @return received data length
+ */
 int USB_RecvControlLong(void * data, int len) {
 	return int(USBDevice.recvControl(data, len));
 }
 
 
+/**
+ * Returns how many bytes have been received on the given endpoint.
+ * 
+ * @param[in] ep - endpoint
+ * @return received bytes count
+ */
 uint8_t USB_Available(uint8_t ep) {
 	const uint32_t available = USBDevice.available(ep);
 	return uint8_t(min(255, available));
 }
 
 
+/**
+ * Returns how many bytes can be written to the given endpoint
+ * without blocking.
+ * 
+ * @param[in] ep - endpoint
+ * @return number of bytes available for write
+ */
 uint8_t USB_SendSpace(uint8_t ep) {
 	const uint16_t epMask = uint16_t(1 << uint16_t(ep & 0xF));
 	if ((txPendingEp & epMask) != 0) {
@@ -1272,21 +1349,49 @@ uint8_t USB_SendSpace(uint8_t ep) {
 }
 
 
+/**
+ * Send data to an endpoint. Block until the transmission finished.
+ * 
+ * @param[in] ep - endpoint number; can be combined with `TRANSFER_ZERO`, `TRANSFER_RELEASE` and/or `TRANSFER_PGM`
+ * @param[in] data - data buffer
+ * @param[in] len - data length
+ * @return bytes transmitted
+ */
 int USB_Send(uint8_t ep, const void * data, int len) {
-	return int(USBDevice.send(ep, data, len));
+	return int(sendHelper(ep & 0xF0, ep & 0xF, data, len));
 }
 
 
+/**
+ * Non-blocking receive.
+ * 
+ * @param[in] ep - endpoint number
+ * @param[out] data - data buffer
+ * @param[in] len - buffer size
+ * @return Number of bytes copied to the passed data buffer.
+ * @remarks -1 is returned if no USB device is connected for compatibility reasons.
+ */
 int USB_Recv(uint8_t ep, void * data, int len) {
 	return int(USBDevice.recv(ep, data, len));
 }
 
 
+/**
+ * Receive one byte if available.
+ * 
+ * @param[in] ep - endpoint number
+ * @return received byte or -1 if unavailable
+ */
 int USB_Recv(uint8_t ep) {
 	return USBDevice.recv(ep);
 }
 
 
+/**
+ * Flush buffers of the given endpoint.
+ * 
+ * @param[in] ep - endpoint
+ */
 void USB_Flush(uint8_t ep) {
 	USBDevice.flush(ep);
 }
@@ -1576,7 +1681,7 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef * /* hPcd */, uint8_t ep) {
  * @remarks Output of the SOF signal needs to be explicitly enabled at USB HAL initialization.
  */
 void HAL_PCD_SOFCallback(PCD_HandleTypeDef * /* hPcd */) {
-	//uint32_t frameNumber = hPcdUsb->Instance->FNR & USB_FNR_FN;
+	//uint32_t frameNumber = usbFrameNumber();
 }
 
 

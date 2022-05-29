@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2019-2022 Daniel Starke
  * @date 2019-03-10
- * @version 2022-03-22
+ * @version 2022-04-17
  */
 #include <ctype.h>
 #include <stdio.h>
@@ -12,6 +12,9 @@
 
 /** Possible characters in base 2 to 36. */
 const char * _charMap = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+
+#ifndef STM32CUBEDUINO_DISABLE_STRING
 
 
 namespace {
@@ -1021,3 +1024,6 @@ StringSumHelper & operator+ (const StringSumHelper & o, double val) {
 	if ( ! res.concat(val) ) res.invalidate();
 	return res;
 }
+
+
+#endif /* not STM32CUBEDUINO_DISABLE_STRING */

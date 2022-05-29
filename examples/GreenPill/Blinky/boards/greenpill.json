@@ -1,0 +1,37 @@
+{
+	"build": {
+		"core": "stm32",
+		"cpu": "cortex-m0plus",
+		"mcu": "stm32l053c8t6",
+		"product_line": "STM32L053xx",
+		"extra_flags": "-DUSB_VID=0x2341 -DUSB_PID=0x8036"
+	},
+	"debug": {
+		"default_tools": [
+			"stlink"
+		],
+		"jlink_device": "STM32L053C8",
+		"onboard_tools": [
+			"stlink"
+		],
+		"openocd_target": "stm32l0",
+		"svd_path": "STM32L053x.svd"
+	},
+	"frameworks": "stm32cube",
+	"name": "greenpill",
+	"upload": {
+		"maximum_ram_size": 8192,
+		"maximum_size": 65536,
+		"protocol": "stlink",
+		"protocols": [
+			"jlink",
+			"stlink",
+			"blackmagic",
+			"serial",
+			"mbed",
+			"dfu"
+		]
+	},
+	"url": "https://stm32-base.org/boards/STM32L053C8T6-Green-Pill",
+	"vendor": "Generic"
+}

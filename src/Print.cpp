@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2019-2022 Daniel Starke
  * @date 2019-03-09
- * @version 2022-03-22
+ * @version 2022-04-17
  */
 #include <math.h>
 #include <string.h>
@@ -92,6 +92,7 @@ int Print::availableForWrite(void) {
 }
 
 
+#ifndef STM32CUBEDUINO_DISABLE_STRING
 /**
  * Writes out the given string.
  * 
@@ -112,6 +113,7 @@ size_t Print::print(const __FlashStringHelper * str) {
 size_t Print::print(const String & str) {
 	return this->write(str.c_str(), str.length());
 }
+#endif /* not STM32CUBEDUINO_DISABLE_STRING */
 
 
 /**
@@ -226,6 +228,7 @@ size_t Print::print(const Printable & obj) {
 }
 
 
+#ifndef STM32CUBEDUINO_DISABLE_STRING
 /**
  * Writes out the given string with a line break.
  * 
@@ -246,6 +249,7 @@ size_t Print::println(const __FlashStringHelper * str) {
 size_t Print::println(const String & str) {
 	return this->print(str) + this->println();
 }
+#endif /* not STM32CUBEDUINO_DISABLE_STRING */
 
 
 /**

@@ -1,9 +1,9 @@
 /**
  * @file Stream.cpp
  * @author Daniel Starke
- * @copyright Copyright 2019-2020 Daniel Starke
+ * @copyright Copyright 2019-2022 Daniel Starke
  * @date 2019-03-10
- * @version 2020-06-05
+ * @version 2022-04-17
  */
 #include "Arduino.h"
 #include "Stream.h"
@@ -201,6 +201,7 @@ size_t Stream::readBytesUntil(char terminator, uint8_t * buffer, size_t length) 
 }
 
 
+#ifndef STM32CUBEDUINO_DISABLE_STRING
 String Stream::readString(void) {
 	String res;
 	for (int c = this->timedRead(); c >= 0; c = this->timedRead()) {
@@ -217,6 +218,7 @@ String Stream::readStringUntil(char terminator) {
 	}
 	return res;
 }
+#endif /* not STM32CUBEDUINO_DISABLE_STRING */
 
 
 int Stream::timedRead(void) {

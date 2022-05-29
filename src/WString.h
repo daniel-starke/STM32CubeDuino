@@ -1,15 +1,18 @@
 /**
  * @file WString.h
  * @author Daniel Starke
- * @copyright Copyright 2019-2020 Daniel Starke
+ * @copyright Copyright 2019-2022 Daniel Starke
  * @date 2019-03-10
- * @version 2020-11-02
+ * @version 2022-04-17
  */
 #ifndef __WSTRING_H__
 #define __WSTRING_H__
 
 #include <stdlib.h>
 #include <string.h>
+
+
+#ifndef STM32CUBEDUINO_DISABLE_STRING
 
 
 /* for compatibility */
@@ -176,6 +179,9 @@ public:
 	StringSumHelper(float val);
 	StringSumHelper(double val);
 };
+
+
+#endif /* not STM32CUBEDUINO_DISABLE_STRING */
 
 
 #endif /* __WSTRING_H__ */

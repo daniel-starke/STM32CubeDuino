@@ -3,7 +3,7 @@
 @author Daniel Starke
 @copyright Copyright 2020-2022 Daniel Starke
 @date 2020-10-20
-@version 2022-03-27
+@version 2022-05-29
 """
 
 import os
@@ -1615,6 +1615,25 @@ def getMcuVariant(boardId, cpu, mcu):
 		return {"error": "Invalid value in CPU field for board %s. Possible values for %s are: %s." % (boardId, result["partNumber"] + result["variant"], cores)}
 	return result
 
+def getOpenOcdTarget(mcu, warn = False):
+	""" Returns the PlatformIO OpenOCD target name for the given MCU. """
+	# dual bank firmware download is not support
+	from platformio.project.config import ProjectConfig
+	projectConfig = ProjectConfig()
+	corePath = projectConfig.get_optional_dir("core")
+	if corePath:
+		targetPath = os.path.join(corePath, "packages", "tool-openocd", "scripts", "target")
+		pattern = re.compile("^stm32[^_]+\.cfg$", re.I)
+		files = [f for f in os.listdir(targetPath) if os.path.isfile(os.path.join(targetPath, f)) and pattern.match(f)]
+		lowerMcu = mcu.lower()
+		for file in files:
+			target = file.replace(".cfg", "")
+			if re.match("^" + target.replace("x", ".*") + ".*$", lowerMcu, re.I):
+				return target;
+		if warn:
+			print("Warning: OpenOCD target not found for: " + mcu, file=sys.stderr)
+	return None
+
 def getSvdFile(mcu, warn = False):
 	""" Returns the PlatformIO SVD file name for the given MCU. """
 	from platformio.project.config import ProjectConfig
@@ -1632,11 +1651,14 @@ def getSvdFile(mcu, warn = False):
 			if warn:
 				print("Warning: SVD file name list file not found: " + svdMapPath, file=sys.stderr)
 	return None
-
+	
 
 # add target specific pre-processor defines
 if __name__ == 'SCons.Script':
 	Import("env")
+	
+	if not "stm32cube" in map(str.lower, env.GetProjectOption("framework")):
+		Return()
 	
 	global_env = DefaultEnvironment()
 	board = env.BoardConfig()
@@ -1649,7 +1671,13 @@ if __name__ == 'SCons.Script':
 		env.Append(CPPDEFINES=userMcu) # for this library
 		global_env.Append(CPPDEFINES=userMcu) # for all other components
 	env.Append(CPPDEFINES=[mcu["partNumber"] + mcu["variant"], mcu["partNumber"], mcu["define"], "ARDUINO=" + str(ARDUINO), "ARDUINO_ARCH_STM32"]) # for this library
-	global_env.Append(CPPDEFINES=[mcu["partNumber"] + mcu["variant"], mcu["partNumber"], mcu["define"], "ARDUINO=" + str(ARDUINO), "ARDUINO_ARCH_STM32"], LINKFLAGS=["-Wl,-u,_printf_float,-u,_scanf_float"]) # for all other components
+	global_env.Append(CPPDEFINES=[mcu["partNumber"] + mcu["variant"], mcu["partNumber"], mcu["define"], "ARDUINO=" + str(ARDUINO), "ARDUINO_ARCH_STM32"]) # for all other components
+	# include float support for printf/scanf like functions
+	cppDefines = env.get("CPPDEFINES", [])
+	if not "STM32CUBEDUINO_DISABLE_PRINTF_FLOAT" in cppDefines:
+		global_env.Append(LINKFLAGS=["-Wl,-u,_printf_float"])
+	if not "STM32CUBEDUINO_DISABLE_SCANF_FLOAT" in cppDefines:
+		global_env.Append(LINKFLAGS=["-Wl,-u,_scanf_float"])
 
 
 # helper application to create PlatformIO board ini files
@@ -1669,6 +1697,7 @@ The included <placeholders> need to be filled out before actual use.""", file=sy
 		print("Error: " + mcu["error"], file=sys.stderr)
 		sys.exit(1)
 	
+	ocdTarget = getOpenOcdTarget(mcu["partNumber"], True)
 	svdFile = getSvdFile(mcu["partNumber"], True)
 	
 	boardName = "<add board name here>"
@@ -1691,7 +1720,7 @@ The included <placeholders> need to be filled out before actual use.""", file=sy
 		"onboard_tools": [
 			"stlink"
 		],
-		"openocd_target": "{mcu:.7s}x",
+		"openocd_target": "{OCD}",
 		"svd_path": "{SVD}"
 	}},
 	"frameworks": "stm32cube",
@@ -1717,6 +1746,7 @@ The included <placeholders> need to be filled out before actual use.""", file=sy
 		PROD=mcu["define"],
 		dev=sys.argv[2].lower()[:11],
 		DEV=sys.argv[2].upper()[:11],
+		OCD=(ocdTarget if ocdTarget else "<add OpenOCD target name here>"),
 		SVD=(svdFile if svdFile else "<add SVD file name here>"),
 		RAM=mcu["ram"] * 1024,
 		FLASH=mcu["flash"] * 1024,

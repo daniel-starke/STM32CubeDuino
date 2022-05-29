@@ -1,9 +1,9 @@
 /**
  * @file Print.h
  * @author Daniel Starke
- * @copyright Copyright 2019-2020 Daniel Starke
+ * @copyright Copyright 2019-2022 Daniel Starke
  * @date 2019-03-09
- * @version 2020-11-02
+ * @version 2022-04-17
  */
 #ifndef __PRINT_H__
 #define __PRINT_H__
@@ -42,8 +42,10 @@ public:
 	size_t write(const char * buffer, size_t size);
 	virtual int availableForWrite(void);
 
+#ifndef STM32CUBEDUINO_DISABLE_STRING
 	size_t print(const __FlashStringHelper * str);
 	size_t print(const String & str);
+#endif /* not STM32CUBEDUINO_DISABLE_STRING */
 	size_t print(const char str[]);
 	size_t print(char c);
 	size_t print(unsigned char val, int base = DEC);
@@ -54,8 +56,10 @@ public:
 	size_t print(FloatType val, int base = 2);
 	size_t print(const Printable & obj);
 
+#ifndef STM32CUBEDUINO_DISABLE_STRING
 	size_t println(const __FlashStringHelper * str);
 	size_t println(const String & str);
+#endif /* not STM32CUBEDUINO_DISABLE_STRING */
 	size_t println(const char str[]);
 	size_t println(char c);
 	size_t println(unsigned char val, int base = DEC);

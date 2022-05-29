@@ -1,9 +1,9 @@
 /**
  * @file Stream.h
  * @author Daniel Starke
- * @copyright Copyright 2019-2020 Daniel Starke
+ * @copyright Copyright 2019-2022 Daniel Starke
  * @date 2019-03-10
- * @version 2020-05-17
+ * @version 2022-04-17
  */
 #ifndef __STREAM_H__
 #define __STREAM_H__
@@ -61,8 +61,10 @@ public:
 	size_t readBytesUntil(char terminator, char * buffer, size_t length);
 	size_t readBytesUntil(char terminator, uint8_t * buffer, size_t length);
 
+#ifndef STM32CUBEDUINO_DISABLE_STRING
 	String readString(void);
 	String readStringUntil(char terminator);
+#endif /* not STM32CUBEDUINO_DISABLE_STRING */
 protected:
 	int timedRead(void);
 	int timedPeek(void);

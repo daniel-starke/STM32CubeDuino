@@ -24,7 +24,8 @@ Getting Started
 ===============
 
 A getting started guide can be found [here](doc/starting.md).  
-Some small examples are also included [here](examples).
+Some small examples are also included [here](examples).  
+Note that the examples are configured to be compiled from within this repository.
 
 Done
 ====
@@ -52,7 +53,8 @@ Done
 - [x] shiftOut()/shiftIn()
 - [x] SPI (untested)
 - [x] I2C
-- [ ] [EEPROM](https://www.st.com/resource/en/application_note/dm00311483-eeprom-emulation-techniques-and-software-for-stm32-microcontrollers-stmicroelectronics.pdf)
+- [x] EEPROM
+- [ ] [EEPROM flash emulation](https://www.st.com/resource/en/application_note/dm00311483-eeprom-emulation-techniques-and-software-for-stm32-microcontrollers-stmicroelectronics.pdf)
 - [x] Pluggable USB
 - [x] USB CDC
 - [ ] USB HID
@@ -76,64 +78,71 @@ Done
 Special Macros
 ==============
 
-|Name                                 |Meaning
-|-------------------------------------|---------------------------------------------------------------
-|`ARDUINO`                            |Defines the compatible Arduino version.
-|`ARDUINO_API_VERSION`                |Defines the compatible Arduino API version.
-|`ARDUINO_ARCH_STM32`                 |Defines the Arduino target architecture.
-|`STM32CUBEDUINO`                     |Defines the version of the STM32CubeDuino library as string.
-|`STM32CUBEDUINO`                     |Defines the version of the STM32CubeDuino library as string.
-|`STM32CUBEDUINO_MAJOR`               |Defines the major version number of the STM32CubeDuino library.
-|`STM32CUBEDUINO_MINOR`               |Defines the minor version number of the STM32CubeDuino library.
-|`STM32CUBEDUINO_PATCH`               |Defines the patch version number of the STM32CubeDuino library.
-|`STM32CUBEDUINO_VERSION(x, y, z)`    |Transforms the given major, minor and patch version number into a single number for comparison.
-|`STM32CUBEDUINO_VERSION_CODE`        |Defines the version of the STM32CubeDuino library as single number for comparison.
-|`STM32CUBEDUINO_SMALL_FLASH`         |May be defined by the user to trade off speed for small flash usage.
-|`STM32CUBEDUINO_FLOAT_STRING`        |May be defined by the user to implement only single precision float to string conversion functions.
-|`STM32CUBEDUINO_LEGACY_API`          |May be defined by the user to remove non-Arduino functions for better compatibility.
-|`STM32CUBEDUINO_INTERNALS`           |May be defined by the user to get access to some internal functions. These are not automatically exported. The user needs to declare a function prototype to access these.
-|`STM32CUBEDUINO_CUSTOM_IRQ_HANDLERS` |May be defined by the user to define custom STM32 HAL IRQ handlers. All STM32CubeDuino specific handlers will be disabled.
-|`STM32CUBEDUINO_MAP_ALL_IRQS`        |May be defined by the user to unconditionally map all STM32 HAL IRQ handlers to STM32CubeDino specific ones.
-|`STM32CUBEDUINO_DISABLE_ADC`         |May be defined by the user to disable ADC related STM32CubeDino functions.
-|`STM32CUBEDUINO_DISABLE_CDC`         |May be defined by the user to disable USB serial (CDC) related STM32CubeDino functions.
-|`STM32CUBEDUINO_DISABLE_DAC`         |May be defined by the user to disable DAC related STM32CubeDino functions.
-|`STM32CUBEDUINO_DISABLE_EXTI`        |May be defined by the user to disable external interrupt related STM32CubeDino functions.
-|`STM32CUBEDUINO_DISABLE_I2C`         |May be defined by the user to disable I2C related STM32CubeDino functions.
-|`STM32CUBEDUINO_DISABLE_PWM`         |May be defined by the user to disable PWM related STM32CubeDino functions.
-|`STM32CUBEDUINO_DISABLE_SERIAL`      |May be defined by the user to disable hardware serial related STM32CubeDino functions.
-|`STM32CUBEDUINO_DISABLE_SPI`         |May be defined by the user to disable SPI related STM32CubeDino functions.
-|`STM32CUBEDUINO_DISABLE_TIMER`       |May be defined by the user to disable hardware timer related STM32CubeDino functions (not PWM).
-|`STM32CUBEDUINO_DISABLE_USB`         |May be defined by the user to disable USB related STM32CubeDino functions.
-|`NO_GPL`                             |May be defined by the user to exclude GPL licensed code. This affects only support functions included for better Arduino AVR compatibility.
-|`SERIAL_RX_BUFFER_SIZE`              |May be defined by the user to change the serial reception buffer size. Defaults to 64 bytes.
-|`SERIAL_TX_BUFFER_SIZE`              |May be defined by the user to change the serial transmission buffer size. Defaults to 64 bytes.
-|`TWOWIRE_RX_BUFFER_SIZE`             |May be defined by the user to change the I2C reception buffer size. Defaults to 32 bytes.
-|`TWOWIRE_TX_BUFFER_SIZE`             |May be defined by the user to change the I2C transmission buffer size. Defaults to 32 bytes.
-|`SPI_TRANSFER_TIMEOUT`               |May be defined by the user to change the SPI timeout in milliseconds. Set to HAL_MAX_DELAY for no timeout. Defaults to 1000ms.
-|`ACTIVATE_USB_PORT`                  |May be defined by the user with custom logic to force a USB enumeration, e.g. by pulling down D+.
-|`USB_EP_SIZE`                        |May be defined by the user to change the USB single endpoint size. Defaults to 32 or 64 bytes depending on the target platform.
-|`USB_PRODUCT`                        |May be defined by the user to change the USB product name. Defaults to `"USB IO Board"`.
-|`USB_MANUFACTURER`                   |May be defined by the user to change the USB manufacturer name. Defaults to `"STMicroelectronics"` depending on `USB_VID`.
-|`I_CACHE_DISABLED`                   |May be defined by the user to disable instruction cache.
-|`D_CACHE_DISABLED`                   |May be defined by the user to disable data cache.
-|`HAVE_HWSERIAL0`                     |Defined if the hardware serial API is available.
-|`HAVE_CDCSERIAL`                     |Defined if the CDC (serial USB) API is available.
-|`USBCON`                             |Defined if the USB API is available.
-|`USB_ENDPOINTS`                      |Defined with the number of available USB endpoints.
-|`EXTI_IRQ_PRIO`                      |Needs to be defined in `board.hpp` to set the priority for external interrupts.
-|`EXTI_IRQ_SUBPRIO`                   |Needs to be defined in `board.hpp` to set the sub-priority for external interrupts.
-|`I2C_IRQ_PRIO`                       |Needs to be defined in `board.hpp` to set the priority for I2C interrupts.
-|`I2C_IRQ_SUBPRIO`                    |Needs to be defined in `board.hpp` to set the sub-priority for I2C interrupts.
-|`SYSTICK_IRQ_PRIO`                   |Needs to be defined in `board.hpp` to set the priority for SYSTICK interrupts.
-|`SYSTICK_IRQ_SUBPRIO`                |Needs to be defined in `board.hpp` to set the sub-priority for SYSTICK interrupts.
-|`TIMER_IRQ_PRIO`                     |Needs to be defined in `board.hpp` to set the priority for TIMER interrupts.
-|`TIMER_IRQ_SUBPRIO`                  |Needs to be defined in `board.hpp` to set the sub-priority for TIMER interrupts.
-|`UART_IRQ_PRIO`                      |Needs to be defined in `board.hpp` to set the priority for UART/USART interrupts.
-|`UART_IRQ_SUBPRIO`                   |Needs to be defined in `board.hpp` to set the sub-priority for UART/USART interrupts.
-|`USB_IRQ_PRIO`                       |Needs to be defined in `board.hpp` to set the priority for USB interrupts.
-|`USB_IRQ_SUBPRIO`                    |Needs to be defined in `board.hpp` to set the sub-priority for USB interrupts.
-|`USB_VID`                            |Needs to be defined in `board.hpp` to set the USB vendor ID. E.g. `0x2341` for Arduino LLC.
-|`USB_PID`                            |Needs to be defined in `board.hpp` to set the USB product ID. E.g. `0x8036` for Leonardo (CDC ACM, HID).
+|Name                                  |Meaning
+|--------------------------------------|---------------------------------------------------------------
+|`ARDUINO`                             |Defines the compatible Arduino version.
+|`ARDUINO_API_VERSION`                 |Defines the compatible Arduino API version.
+|`ARDUINO_ARCH_STM32`                  |Defines the Arduino target architecture.
+|`STM32CUBEDUINO`                      |Defines the version of the STM32CubeDuino library as string.
+|`STM32CUBEDUINO`                      |Defines the version of the STM32CubeDuino library as string.
+|`STM32CUBEDUINO_MAJOR`                |Defines the major version number of the STM32CubeDuino library.
+|`STM32CUBEDUINO_MINOR`                |Defines the minor version number of the STM32CubeDuino library.
+|`STM32CUBEDUINO_PATCH`                |Defines the patch version number of the STM32CubeDuino library.
+|`STM32CUBEDUINO_VERSION(x, y, z)`     |Transforms the given major, minor and patch version number into a single number for comparison.
+|`STM32CUBEDUINO_VERSION_CODE`         |Defines the version of the STM32CubeDuino library as single number for comparison.
+|`STM32CUBEDUINO_SMALL_FLASH`          |May be defined by the user to trade off speed for small flash usage.
+|`STM32CUBEDUINO_FLOAT_STRING`         |May be defined by the user to implement only single precision float to string conversion functions.
+|`STM32CUBEDUINO_LEGACY_API`           |May be defined by the user to remove non-Arduino functions for better compatibility.
+|`STM32CUBEDUINO_INTERNALS`            |May be defined by the user to get access to some internal functions. These are not automatically exported. The user needs to declare a function prototype to access these.
+|`STM32CUBEDUINO_CUSTOM_IRQ_HANDLERS`  |May be defined by the user to define custom STM32 HAL IRQ handlers. All STM32CubeDuino specific handlers will be disabled.
+|`STM32CUBEDUINO_MAP_ALL_IRQS`         |May be defined by the user to unconditionally map all STM32 HAL IRQ handlers to STM32CubeDino specific ones.
+|`STM32CUBEDUINO_DISABLE_ADC`          |May be defined by the user to disable ADC related STM32CubeDino functions.
+|`STM32CUBEDUINO_DISABLE_CDC`          |May be defined by the user to disable USB serial (CDC) related STM32CubeDino functions.
+|`STM32CUBEDUINO_DISABLE_DAC`          |May be defined by the user to disable DAC related STM32CubeDino functions.
+|`STM32CUBEDUINO_DISABLE_EEPROM`       |May be defined by the user to disable EEPROM related STM32CubeDino functions.
+|`STM32CUBEDUINO_DISABLE_EXTI`         |May be defined by the user to disable external interrupt related STM32CubeDino functions.
+|`STM32CUBEDUINO_DISABLE_I2C`          |May be defined by the user to disable I2C related STM32CubeDino functions.
+|`STM32CUBEDUINO_DISABLE_PWM`          |May be defined by the user to disable PWM related STM32CubeDino functions.
+|`STM32CUBEDUINO_DISABLE_PRINTF_FLOAT` |May be defined by the user to disable float support in printf like functions.
+|`STM32CUBEDUINO_DISABLE_SCANF_FLOAT`  |May be defined by the user to disable float support in scanf like functions.
+|`STM32CUBEDUINO_DISABLE_SERIAL`       |May be defined by the user to disable hardware serial related STM32CubeDino functions.
+|`STM32CUBEDUINO_DISABLE_SPI`          |May be defined by the user to disable SPI related STM32CubeDino functions.
+|`STM32CUBEDUINO_DISABLE_STRING`       |May be defined by the user to disable the Arduino String class and related functions.
+|`STM32CUBEDUINO_DISABLE_TIMER`        |May be defined by the user to disable hardware timer related STM32CubeDino functions (not PWM).
+|`STM32CUBEDUINO_DISABLE_USB`          |May be defined by the user to disable USB related STM32CubeDino functions.
+|`NO_GPL`                              |May be defined by the user to exclude GPL licensed code. This affects only support functions included for better Arduino AVR compatibility.
+|`SERIAL_RX_BUFFER_SIZE`               |May be defined by the user to change the serial reception buffer size. Defaults to 64 bytes.
+|`SERIAL_TX_BUFFER_SIZE`               |May be defined by the user to change the serial transmission buffer size. Defaults to 64 bytes.
+|`TWOWIRE_RX_BUFFER_SIZE`              |May be defined by the user to change the I2C reception buffer size. Defaults to 32 bytes.
+|`TWOWIRE_TX_BUFFER_SIZE`              |May be defined by the user to change the I2C transmission buffer size. Defaults to 32 bytes.
+|`SPI_TRANSFER_TIMEOUT`                |May be defined by the user to change the SPI timeout in milliseconds. Set to `HAL_MAX_DELAY` for no timeout. Defaults to 1000ms.
+|`ACTIVATE_USB_PORT`                   |May be defined by the user with custom logic to force a USB enumeration, e.g. by pulling down D+.
+|`USB_EP_SIZE`                         |May be defined by the user to change the USB single endpoint size. Defaults to 32 or 64 bytes depending on the target platform.
+|`USB_RX_SIZE`                         |May be defined by the user to change the USB reception buffer size. This needs to be at least `2 * USB_EP_SIZE`. Defaults to `2 * USB_EP_SIZE`.
+|`USB_TX_SIZE`                         |May be defined by the user to change the USB transmission buffer size. This needs to be a multiple of `USB_EP_SIZE` and at least two times its size. Defaults to `2 * USB_EP_SIZE`.
+|`USB_PRODUCT`                         |May be defined by the user to change the USB product name. Defaults to `"USB IO Board"`.
+|`USB_MANUFACTURER`                    |May be defined by the user to change the USB manufacturer name. Defaults to `"STMicroelectronics"` depending on `USB_VID`.
+|`I_CACHE_DISABLED`                    |May be defined by the user to disable instruction cache.
+|`D_CACHE_DISABLED`                    |May be defined by the user to disable data cache.
+|`HAVE_HWSERIAL0`                      |Defined if the hardware serial API is available.
+|`HAVE_CDCSERIAL`                      |Defined if the CDC (serial USB) API is available.
+|`USBCON`                              |Defined if the USB API is available.
+|`USB_ENDPOINTS`                       |Defined with the number of available USB endpoints.
+|`EXTI_IRQ_PRIO`                       |Needs to be defined in `board.hpp` to set the priority for external interrupts.
+|`EXTI_IRQ_SUBPRIO`                    |Needs to be defined in `board.hpp` to set the sub-priority for external interrupts.
+|`I2C_IRQ_PRIO`                        |Needs to be defined in `board.hpp` to set the priority for I2C interrupts.
+|`I2C_IRQ_SUBPRIO`                     |Needs to be defined in `board.hpp` to set the sub-priority for I2C interrupts.
+|`SYSTICK_IRQ_PRIO`                    |Needs to be defined in `board.hpp` to set the priority for SYSTICK interrupts.
+|`SYSTICK_IRQ_SUBPRIO`                 |Needs to be defined in `board.hpp` to set the sub-priority for SYSTICK interrupts.
+|`TIMER_IRQ_PRIO`                      |Needs to be defined in `board.hpp` to set the priority for TIMER interrupts.
+|`TIMER_IRQ_SUBPRIO`                   |Needs to be defined in `board.hpp` to set the sub-priority for TIMER interrupts.
+|`UART_IRQ_PRIO`                       |Needs to be defined in `board.hpp` to set the priority for UART/USART interrupts.
+|`UART_IRQ_SUBPRIO`                    |Needs to be defined in `board.hpp` to set the sub-priority for UART/USART interrupts.
+|`USB_IRQ_PRIO`                        |Needs to be defined in `board.hpp` to set the priority for USB interrupts.
+|`USB_IRQ_SUBPRIO`                     |Needs to be defined in `board.hpp` to set the sub-priority for USB interrupts.
+|`USB_VID`                             |Needs to be defined in `board.hpp` to set the USB vendor ID. E.g. `0x2341` for Arduino LLC.
+|`USB_PID`                             |Needs to be defined in `board.hpp` to set the USB product ID. E.g. `0x8036` for Leonardo (CDC ACM, HID).
+|`USB_TX_TRANSACTIONAL`                |Needs to be defined in `board.hpp` if the used STM32 HAL library handles multi-packet USB transactions with a single `HAL_PCD_DataInStageCallback()` call.
 
 Implementation Notes
 ====================
@@ -181,7 +190,22 @@ FAQ
 **A:** Most likely not. The code was written with the assumption that GCC is used to simplify code design in several places.
 
 **Q:** How can I simply reduce the binary size?  
-**A:** Define the macros `STM32CUBEDUINO_SMALL_FLASH` and `STM32CUBEDUINO_FLOAT_STRING` in the board definition or via build flag. This trades off execution speed for flash size. Additionally, the build flag `-ffast-math` can improve code size. Also try to disable unused periphery by defining `STM32CUBEDUINO_DISABLE_USB` for example.
+**A:** There are several simple ways to reduce the needed flash size. Some with speed penalties.
+- Define the macros `STM32CUBEDUINO_SMALL_FLASH` and `STM32CUBEDUINO_FLOAT_STRING` in the board definition or via build flag. This trades off execution speed for flash size.
+- Adding the build flag `-ffast-math` can improve code size.
+- Avoid floating point math all together.
+- Try to disable unused periphery and functions by defining `STM32CUBEDUINO_DISABLE_PRINTF_FLOAT` for example. See the complete list of disabling macros above.
+- Use the compiler flag `-Os`. This should be active by default.
+
+**Q:** How can I improve execution speed/throughput?  
+**A:** The biggest benefit usually has the use of better algorithm. Minor improvements can be archives with the following steps.
+- Add the build flag `-ffast-math` for faster, but less IEEE 754 conformance in floating point math.
+- Use FIFO sizes to a power of 2 (e.g. for `USB_TX_SIZE`). This makes the compiler use simple binary AND which is much faster than integer division.
+- Use larger periphery buffers.
+- Try offloading tasks to DMA channels. Note that the Arduino API offers no functions for this. You can use the STM32 HAL API for example.
+- Pass larger structures by reference/pointer instead of copy. Pass native types (e.g. `int`) by value.
+- Use `const` were possible.
+- Enable instruction and data cache via STM32 HAL API if available for the target MCU. E.g. via `SCB_EnableICache()`. Both is usually enabled by default in STM32CubeDuino.
 
 **Q:** How do I generate a custom `initVariant()` function for my board?  
 **A:** Download the [STM32CubeIDE](https://www.st.com/en/development-tools/stm32cubeide.html). Create a new `STM32 Project` for the used chip in there and activate all relevant peripherals. Complete the clock configuration and generate the code. The content from the generated `SystemClock_Config()` function in `main.c` is the base for the new `initVariant()` function. Finally, replace all calls to `Error_Handler()` with `systemErrorHandler()`. See also [Getting Started](doc/starting.md).

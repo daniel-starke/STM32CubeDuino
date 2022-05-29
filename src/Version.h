@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-06-07
- * @version 2022-04-03
+ * @version 2022-05-29
  * 
  * Inspired from Linux Kernel. Usage example:
  * @code .cpp
@@ -19,7 +19,7 @@
 /** Derived from `ARDUINO` which is defined in `BuildScript.py` */
 #define ARDUINO_API_VERSION ARDUINO
 
-#define STM32CUBEDUINO "1.1.0"
+#define STM32CUBEDUINO "1.2.0"
 #define STM32CUBEDUINO_MAJOR 1
 #define STM32CUBEDUINO_MINOR 1
 #define STM32CUBEDUINO_PATCH 0
