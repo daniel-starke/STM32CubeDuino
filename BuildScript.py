@@ -1624,14 +1624,18 @@ def getOpenOcdTarget(mcu, warn = False):
 	if corePath:
 		targetPath = os.path.join(corePath, "packages", "tool-openocd", "scripts", "target")
 		pattern = re.compile("^stm32[^_]+\.cfg$", re.I)
-		files = [f for f in os.listdir(targetPath) if os.path.isfile(os.path.join(targetPath, f)) and pattern.match(f)]
-		lowerMcu = mcu.lower()
-		for file in files:
-			target = file.replace(".cfg", "")
-			if re.match("^" + target.replace("x", ".*") + ".*$", lowerMcu, re.I):
-				return target;
-		if warn:
-			print("Warning: OpenOCD target not found for: " + mcu, file=sys.stderr)
+		try:
+			files = [f for f in os.listdir(targetPath) if os.path.isfile(os.path.join(targetPath, f)) and pattern.match(f)]
+			lowerMcu = mcu.lower()
+			for file in files:
+				target = file.replace(".cfg", "")
+				if re.match("^" + target.replace("x", ".*") + ".*$", lowerMcu, re.I):
+					return target;
+			if warn:
+				print("Warning: OpenOCD target not found for: " + mcu, file=sys.stderr)
+		except IOError:
+			if warn:
+				print("Warning: OpenOCD target not found for: " + mcu, file=sys.stderr)
 	return None
 
 def getSvdFile(mcu, warn = False):
