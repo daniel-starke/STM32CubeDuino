@@ -3,7 +3,7 @@
 @author Daniel Starke
 @copyright Copyright 2020-2022 Daniel Starke
 @date 2020-10-20
-@version 2022-05-29
+@version 2022-08-05
 """
 
 import os
@@ -1659,7 +1659,7 @@ def getSvdFile(mcu, warn = False):
 
 # add target specific pre-processor defines
 if __name__ == 'SCons.Script':
-	Import("env")
+	Import("env", "projenv")
 	
 	if not "stm32cube" in map(str.lower, env.GetProjectOption("framework")):
 		Return()
@@ -1675,6 +1675,7 @@ if __name__ == 'SCons.Script':
 		env.Append(CPPDEFINES=userMcu) # for this library
 		global_env.Append(CPPDEFINES=userMcu) # for all other components
 	env.Append(CPPDEFINES=[mcu["partNumber"] + mcu["variant"], mcu["partNumber"], mcu["define"], "ARDUINO=" + str(ARDUINO), "ARDUINO_ARCH_STM32"]) # for this library
+	projenv.Append(CPPDEFINES=[mcu["partNumber"] + mcu["variant"], mcu["partNumber"], mcu["define"], "ARDUINO=" + str(ARDUINO), "ARDUINO_ARCH_STM32"]) # for this project
 	global_env.Append(CPPDEFINES=[mcu["partNumber"] + mcu["variant"], mcu["partNumber"], mcu["define"], "ARDUINO=" + str(ARDUINO), "ARDUINO_ARCH_STM32"]) # for all other components
 	# include float support for printf/scanf like functions
 	cppDefines = env.get("CPPDEFINES", [])

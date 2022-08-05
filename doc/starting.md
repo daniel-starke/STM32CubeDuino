@@ -48,7 +48,7 @@ framework = stm32cube
 lib_deps = https://github.com/daniel-starke/STM32CubeDuino/archive/refs/heads/main.zip
 board = bluepill
 build_flags = -fno-strict-aliasing -I${PROJECTSRC_DIR}/bluepill -DNO_GPL
-src_build_flags = ${common.build_flags}
+build_src_flags = ${common.build_flags}
 debug_tool = stlink
 ```
 

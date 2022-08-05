@@ -303,7 +303,7 @@ public:
 	 * @return current EEPROM cell reference
 	 */
 	EERef operator* () {
-		return this->index;
+		return EERef(this->index);
 	}
 	
 	/**

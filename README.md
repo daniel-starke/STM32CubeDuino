@@ -51,7 +51,7 @@ Done
 - [x] tone()/noTone()
 - [x] pulseIn()/pulseInLong()
 - [x] shiftOut()/shiftIn()
-- [x] SPI (untested)
+- [x] SPI
 - [x] I2C
 - [x] EEPROM
 - [ ] [EEPROM flash emulation](https://www.st.com/resource/en/application_note/dm00311483-eeprom-emulation-techniques-and-software-for-stm32-microcontrollers-stmicroelectronics.pdf)
@@ -204,8 +204,8 @@ FAQ
 - Use larger periphery buffers.
 - Try offloading tasks to DMA channels. Note that the Arduino API offers no functions for this. You can use the STM32 HAL API for example.
 - Pass larger structures by reference/pointer instead of copy. Pass native types (e.g. `int`) by value.
-- Use `const` were possible.
-- Enable instruction and data cache via STM32 HAL API if available for the target MCU. E.g. via `SCB_EnableICache()`. Both is usually enabled by default in STM32CubeDuino.
+- Use `const` where possible.
+- Enable instruction and data cache via STM32 HAL API if available for the target MCU. E.g. via `SCB_EnableICache()`. Both are usually enabled by default in STM32CubeDuino.
 
 **Q:** How do I generate a custom `initVariant()` function for my board?  
 **A:** Download the [STM32CubeIDE](https://www.st.com/en/development-tools/stm32cubeide.html). Create a new `STM32 Project` for the used chip in there and activate all relevant peripherals. Complete the clock configuration and generate the code. The content from the generated `SystemClock_Config()` function in `main.c` is the base for the new `initVariant()` function. Finally, replace all calls to `Error_Handler()` with `systemErrorHandler()`. See also [Getting Started](doc/starting.md).
