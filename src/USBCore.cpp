@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-05-21
- * @version 2022-04-18
+ * @version 2022-08-05
  * 
  * Control Endpoint:
  * @verbatim
@@ -87,20 +87,16 @@
 #endif
 
 
+#ifndef USB_MANUFACTURER
 #if USB_VID == 0x2341
-#ifdef USB_MANUFACTURER
-#undef USB_MANUFACTURER
-#endif /* USB_MANUFACTURER */
 #define USB_MANUFACTURER "Arduino LLC"
 #elif USB_VID == 0x0483
-#ifdef USB_MANUFACTURER
-#undef USB_MANUFACTURER
-#endif /* USB_MANUFACTURER */
 #define USB_MANUFACTURER "STMicroelectronics"
-#elif !defined(USB_MANUFACTURER)
-/* fall through to unknown if no manufacturer name was provided in a macro */
+#else
+/* fallback if no manufacturer name was provided */
 #define USB_MANUFACTURER "Unknown"
 #endif
+#endif /* not USB_MANUFACTURER */
 
 
 #ifndef PCD_EP_TYPE_CTRL
