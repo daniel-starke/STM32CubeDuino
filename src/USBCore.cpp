@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-05-21
- * @version 2022-08-05
+ * @version 2022-08-13
  * 
  * Control Endpoint:
  * @verbatim
@@ -479,7 +479,7 @@ static uint32_t sendHelper(const uint8_t flags, const uint32_t ep, const void * 
 				canWait = true;
 			}
 		}
-		/* wait until space is available and add to queue */
+		/* write data to queue */
 		if ( canWait ) {
 			/* wait until space is available and add to queue */
 			buf.commitLock = true;
@@ -487,6 +487,7 @@ static uint32_t sendHelper(const uint8_t flags, const uint32_t ep, const void * 
 			const uint8_t * dataBuf = reinterpret_cast<const uint8_t *>(data);
 			for (uint32_t i = 0; i < len; dataBuf++, i++) {
 				if ( buf.fifo.push(((flags & TRANSFER_ZERO) == 0) ? *dataBuf : 0) ) continue;
+				// @todo try: while ( ! buf.fifo.push(((flags & TRANSFER_ZERO) == 0) ? *dataBuf : 0) ) {
 				while ( buf.fifo.full() ) {
 					if ((txPendingEp & epMask) == 0) {
 						usbTriggerSend(buf, epNum, false);

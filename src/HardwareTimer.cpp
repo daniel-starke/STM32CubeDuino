@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-11-04
- * @version 2022-03-21
+ * @version 2022-09-10
  */
 #include "Arduino.h"
 #include "HardwareTimer.h"
@@ -344,7 +344,7 @@ void HardwareTimer::initialize(const unsigned long microseconds) {
  * @param[in] microseconds - timer interval in microseconds
  */
 void HardwareTimer::setPeriod(const unsigned long microseconds) {
-	const uint32_t clockFrequency = _TimerPinMap::getClockFrequency(_TimerPinMap::getClockSource(this->instNum));
+	const uint32_t clockFrequency = _TimerPinMap::getTimerClockFrequency(_TimerPinMap::getClockSource(this->instNum));
 	const uint32_t closestTickCount = uint32_t((uint64_t(clockFrequency) * microseconds) / 1000000UL);
 	if ( _TimerPinMap::has32BitCounter(this->instNum) ) {
 		/* There are no low power timers with 32-bit counter, hence, no special handling of their prescaler is needed. */
@@ -364,7 +364,7 @@ void HardwareTimer::setPeriod(const unsigned long microseconds) {
  * @param[in] hertz - timer frequency in Hertz
  */
 void HardwareTimer::setFrequency(const unsigned long hertz) {
-	const uint32_t clockFrequency = _TimerPinMap::getClockFrequency(_TimerPinMap::getClockSource(this->instNum));
+	const uint32_t clockFrequency = _TimerPinMap::getTimerClockFrequency(_TimerPinMap::getClockSource(this->instNum));
 	const uint32_t closestTickCount = (clockFrequency + (hertz / 2)) / hertz;
 	if ( _TimerPinMap::has32BitCounter(this->instNum) ) {
 		/* There are no low power timers with 32-bit counter, hence, no special handling of their prescaler is needed. */

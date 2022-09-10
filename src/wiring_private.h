@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-10-14
- * @version 2022-03-21
+ * @version 2022-09-10
  * 
  * @internal For internal use only.
  */
@@ -154,6 +154,26 @@ struct _TimerPinMap {
 	 * @remarks Implemented in wiring_timer.cpp
 	 */
 	static uint32_t getClockFrequency(const ClockSource clkSrc);
+	
+	/**
+	 * Returns the frequency in Hertz at which the timer clock for the given
+	 * instance is working.
+	 * 
+	 * @return timer instance clock frequency or 0 on error
+	 */
+	inline uint32_t getTimerClockFrequency() const {
+		return _TimerPinMap::getTimerClockFrequency(this->getClockSource());
+	}
+	
+	/**
+	 * Returns the frequency in Hertz at which the timer clock for the given
+	 * instance is working.
+	 * 
+	 * @param[in] clkSrc - timer clock source to return the frequency of
+	 * @return timer instance clock frequency or 0 on error
+	 * @remarks Implemented in wiring_timer.cpp
+	 */
+	static uint32_t getTimerClockFrequency(const ClockSource clkSrc);
 	
 	/**
 	 * Returns whether the stored instance is a low power instance (LPTIMx) or not.

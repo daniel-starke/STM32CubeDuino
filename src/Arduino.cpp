@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-05-12
- * @version 2022-03-24
+ * @version 2022-09-01
  */
 #include "Arduino.h"
 
@@ -80,12 +80,14 @@ void init(void) {
 	HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
 #endif
 #if (__CORTEX_M == 0x07U)
+	noInterrupts();
 #ifndef I_CACHE_DISABLED
 	SCB_EnableICache();
 #endif
 #ifndef D_CACHE_DISABLED
 	SCB_EnableDCache();
 #endif
+	interrupts();
 #endif
 #ifdef DWT_BASE
 	dwtInit();

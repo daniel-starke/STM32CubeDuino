@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-10-21
- * @version 2022-03-29
+ * @version 2022-09-10
  */
 #include "Arduino.h"
 #include "scdinternal/macro.h"
@@ -2409,6 +2409,24 @@ uint32_t _TimerPinMap::getClockFrequency(const _TimerPinMap::ClockSource clkSrc)
 		break;
 	}
 	return 0;
+}
+
+
+__attribute__((weak))
+uint32_t _TimerPinMap::getTimerClockFrequency(const _TimerPinMap::ClockSource clkSrc) {
+	const uint32_t freq = _TimerPinMap::getClockFrequency(clkSrc);
+	if (clkSrc != ClockSource_PCLK1 && clkSrc != ClockSource_PCLK2) {
+		return freq;
+	}
+	/* PCLK has a multiplier of 2 for any prescaler >1. Account for it here. */
+	RCC_ClkInitTypeDef rccClk;
+	uint32_t dummy;
+	HAL_RCC_GetClockConfig(&rccClk, &dummy);
+	if (clkSrc == ClockSource_PCLK1) {
+		return (rccClk.APB1CLKDivider == RCC_HCLK_DIV1) ? freq : freq * 2;
+	} else {
+		return (rccClk.APB2CLKDivider == RCC_HCLK_DIV1) ? freq : freq * 2;
+	}
 }
 
 

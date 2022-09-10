@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-10-02
- * @version 2022-03-22
+ * @version 2022-09-10
  * 
  * @todo check why PWM output of 0 generates a short spike for the first interval at setup
  * @todo add support for SDADC (sigma-delta) (STM32F3 -> https://github.com/eleciawhite/STM32Cube/tree/master/STM32Cube_FW_F3_V1.3.0/Projects/STM32373C_EVAL/Examples/SDADC/SDADC_PressureMeasurement)
@@ -1010,7 +1010,7 @@ _INTERNAL_ACCESS bool analogWriteViaPwm(const uint32_t pin, const _TimerPinMap p
 		uint32_t prescaler = LPTIM_PRESCALER_DIV128;
 		/* Round to the next higher possible number of periods per second. */
 		/* __builtin_clz() translates to ASM CLR on ARM which return 32 for input value 0. This is different than x86 architecture for example. */
-		switch ((sizeof(unsigned int) * 8) - __builtin_clz(pinMap.getClockFrequency() / (_writeFreq * 0xFFFFUL))) {
+		switch ((sizeof(unsigned int) * 8) - __builtin_clz(pinMap.getTimerClockFrequency() / (_writeFreq * 0xFFFFUL))) {
 		case 0:
 		case 1: prescaler = LPTIM_PRESCALER_DIV1; break;
 		case 2: prescaler = LPTIM_PRESCALER_DIV2; break;
@@ -1040,7 +1040,7 @@ _INTERNAL_ACCESS bool analogWriteViaPwm(const uint32_t pin, const _TimerPinMap p
 #endif /* not STM32F1 */
 		hTim->Instance = inst;
 		/* Rounds to the next higher possible number of periods per second. */
-		hTim->Init.Prescaler = uint32_t(pinMap.getClockFrequency() / (_writeFreq * 0xFFFFUL));
+		hTim->Init.Prescaler = uint32_t(pinMap.getTimerClockFrequency() / (_writeFreq * 0xFFFFUL));
 		/* The interval from 0xFFFE to 0 also counts as a single interval which is why there are 0xFFFF intervals here. */
 		hTim->Init.Period = 0xFFFE; /* no 32-bit timer specialization -> treat all as 16-bit timer */
 		hTim->Init.CounterMode = TIM_COUNTERMODE_UP;
