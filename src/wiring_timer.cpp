@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-10-21
- * @version 2022-09-10
+ * @version 2022-09-11
  */
 #include "Arduino.h"
 #include "scdinternal/macro.h"
@@ -125,6 +125,23 @@ static inline auto RCC_GetPCLK4ClockFreq_Wrapper_(const float, Ts... args) -> ui
 template <typename ...Ts>
 static inline uint32_t RCC_GetPCLK4ClockFreq_Wrapper(Ts... args) {
 	return RCC_GetPCLK4ClockFreq_Wrapper_(0 /* prefer int here */, args...);
+}
+
+
+/* C++ SFINAE for handling the absence of the RCC_ClkInitTypeDef field APB2CLKDivider */
+template <typename T>
+static inline auto APB2CLKDivider_Wrapper_(const int, T & var) -> decltype(var.APB2CLKDivider) {
+	return var.APB2CLKDivider;
+}
+
+template <typename T>
+static inline auto APB2CLKDivider_Wrapper_(const float, T &) -> uint32_t {
+	return RCC_HCLK_DIV1; /* fallback value */
+}
+
+template <typename T>
+static inline uint32_t APB2CLKDivider_Wrapper(T & var) {
+	return APB2CLKDivider_Wrapper_(0 /* prefer int here */, var);
 }
 
 
@@ -2425,7 +2442,7 @@ uint32_t _TimerPinMap::getTimerClockFrequency(const _TimerPinMap::ClockSource cl
 	if (clkSrc == ClockSource_PCLK1) {
 		return (rccClk.APB1CLKDivider == RCC_HCLK_DIV1) ? freq : freq * 2;
 	} else {
-		return (rccClk.APB2CLKDivider == RCC_HCLK_DIV1) ? freq : freq * 2;
+		return (APB2CLKDivider_Wrapper(rccClk) == RCC_HCLK_DIV1) ? freq : freq * 2;
 	}
 }
 
