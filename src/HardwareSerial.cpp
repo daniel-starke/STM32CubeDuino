@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-05-12
- * @version 2022-03-25
+ * @version 2022-09-17
  */
 #include "Arduino.h"
 #include "wiring_irq.h"
@@ -522,7 +522,12 @@ void HardwareSerial::begin(const unsigned long baudrate, const uint8_t mode, HAL
 		break;
 	}
 	/* set pin mode and alternate function */
+#ifdef STM32F1
+	/* STM32F1 needs RX to be configured as INPUT */
+	pinModeEx(this->pins[0], INPUT, this->afns >> 4);
+#else /* not STM32F1 */
 	pinModeEx(this->pins[0], ALTERNATE_FUNCTION, this->afns >> 4);
+#endif /* not STM32F1 */
 	pinModeEx(this->pins[1], ALTERNATE_FUNCTION, this->afns & 0xF);
 	/* initialize */
 	this->handle->Init.BaudRate = uint32_t(baudrate);
