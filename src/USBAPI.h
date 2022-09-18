@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020 Daniel Starke
  * @date 2020-05-21
- * @version 2022-03-11
+ * @version 2022-09-17
  */
 #ifndef __USBAPI_H__
 #define __USBAPI_H__
@@ -25,7 +25,11 @@
 #endif
 #if (defined(STM32L1) || defined(STM32F1) || defined(STM32F3))
 #if USB_EP_SIZE > 48
+#ifndef STM32CUBEDUINO_DISABLE_USB_CDC
 #warning The highest USB endpoint number for this platform is 4 due to USB_EP_SIZE. USB CDC together with HID is not possible.
+#else
+#warning The highest USB endpoint number for this platform is 4 due to USB_EP_SIZE.
+#endif
 #elif USB_EP_SIZE > 32
 #warning The highest USB endpoint number for this platform is 6 due to USB_EP_SIZE.
 #endif

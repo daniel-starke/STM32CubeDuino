@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-05-21
- * @version 2022-04-17
+ * @version 2022-09-18
  */
 #ifndef __CDC_H__
 #define __CDC_H__
@@ -11,7 +11,7 @@
 #include "USBAPI.h"
 
 
-#if !defined(STM32CUBEDUINO_DISABLE_SERIAL) && defined(PLUGGABLE_USB_ENABLED) && defined(USBCON)
+#if !defined(STM32CUBEDUINO_DISABLE_USB_CDC) && !defined(STM32CUBEDUINO_DISABLE_SERIAL) && defined(PLUGGABLE_USB_ENABLED) && defined(USBCON)
 #include "HardwareSerial.h"
 #include "PluggableUSB.h"
 

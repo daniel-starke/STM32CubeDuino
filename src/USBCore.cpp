@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-05-21
- * @version 2022-08-13
+ * @version 2022-09-18
  * 
  * Control Endpoint:
  * @verbatim
@@ -432,7 +432,7 @@ static void usbTriggerSend(_UsbTxBuffer & buf, const uint8_t epNum, const bool a
 	/* must disable interrupt to prevent handle lock contention */
 	usbNvicDisable();
 	__DMB(); __DSB(); __ISB(); /* data and instruction barrier */
-#if USB_TX_SIZE >= (USB_EP_SIZE * 4)
+#if USB_TX_SIZE >= (USB_EP_SIZE * 4) && defined(USB_TX_TRANSACTIONAL)
 	const _UsbTxBuffer::FifoType::IndexType nextTail = _UsbTxBuffer::FifoType::IndexType(buf.fifo.tail + 1);
 	if (blockSize >= USB_EP_SIZE && nextTail < _UsbTxBuffer::FifoType::Count && nextTail != buf.fifo.head) {
 		/* queue two blocks at once */
@@ -480,49 +480,64 @@ static uint32_t sendHelper(const uint8_t flags, const uint32_t ep, const void * 
 			}
 		}
 		/* write data to queue */
+		buf.commitLock = true;
 		if ( canWait ) {
 			/* wait until space is available and add to queue */
-			buf.commitLock = true;
 			__DMB(); __DSB(); __ISB(); /* data and instruction barrier */
 			const uint8_t * dataBuf = reinterpret_cast<const uint8_t *>(data);
 			for (uint32_t i = 0; i < len; dataBuf++, i++) {
-				if ( buf.fifo.push(((flags & TRANSFER_ZERO) == 0) ? *dataBuf : 0) ) continue;
-				// @todo try: while ( ! buf.fifo.push(((flags & TRANSFER_ZERO) == 0) ? *dataBuf : 0) ) {
-				while ( buf.fifo.full() ) {
+				while ( ! buf.fifo.push(((flags & TRANSFER_ZERO) == 0) ? *dataBuf : 0) ) {
 					if ((txPendingEp & epMask) == 0) {
+						/* trigger send in case something clogged up */
 						usbTriggerSend(buf, epNum, false);
 						break;
 					}
 					__WFI();
 				}
-				buf.fifo.blockingPush(((flags & TRANSFER_ZERO) == 0) ? *dataBuf : 0);
 			}
-			buf.commitLock = false;
+			if ((flags & TRANSFER_RELEASE) != 0) {
+				while ( ! buf.fifo.commitBlock() ) {
+					if ((txPendingEp & epMask) == 0) {
+						/* trigger send in case something clogged up */
+						usbTriggerSend(buf, epNum, false);
+						break;
+					}
+					__WFI();
+				}
+			}
 		} else {
 			/* add to queue or fail if no space is available, because there is currently no chance to get data out */
-			uint32_t written;
-			if ((flags & TRANSFER_ZERO) == 0) {
-				written = buf.fifo.write(reinterpret_cast<const uint8_t *>(data), len);
-				if (written < len && (txPendingEp & epMask) == 0) {
-					usbTriggerSend(buf, epNum, false);
-					written += buf.fifo.write(reinterpret_cast<const uint8_t *>(data) + written, uint32_t(len - written));
+			if (( ! buf.fifo.full() ) || (flags & TRANSFER_RELEASE) == 0) {
+				uint32_t written;
+				if ((flags & TRANSFER_ZERO) == 0) {
+					written = buf.fifo.write(reinterpret_cast<const uint8_t *>(data), len);
+					if (written < len && (txPendingEp & epMask) == 0) {
+						usbTriggerSend(buf, epNum, false);
+						written += buf.fifo.write(reinterpret_cast<const uint8_t *>(data) + written, uint32_t(len - written));
+					}
+				} else {
+					/* write only zero bytes */
+					for (written = 0; written < len && buf.fifo.push(0); written++);
+					if (written < len && (txPendingEp & epMask) == 0) {
+						usbTriggerSend(buf, epNum, false);
+						for (; written < len && buf.fifo.push(0); written++);
+					}
 				}
+				if ((flags & TRANSFER_RELEASE) != 0) {
+					buf.fifo.commitBlock();
+				}
+				len = written;
 			} else {
-				/* write only zero bytes */
-				for (written = 0; written < len && buf.fifo.push(0); written++);
-				if (written < len && (txPendingEp & epMask) == 0) {
-					usbTriggerSend(buf, epNum, false);
-					for (; written < len && buf.fifo.push(0); written++);
-				}
+				/* TRANSFER_RELEASE was requested but no free block is available to handle this */
+				len = 0;
 			}
-			len = written;
 		}
+		buf.commitLock = false;
 		/* the interrupt routine may send out the queued data at this point */
 		__DMB(); __DSB(); __ISB(); /* data and instruction barrier */
 		if ((txPendingEp & epMask) != 0) return len;
 		if ((flags & TRANSFER_RELEASE) != 0 || zlp) {
 			/* start endpoint transmission from idle state */
-			buf.fifo.commitBlock();
 			usbTriggerSend(buf, epNum, zlp);
 		}
 	}
@@ -1667,7 +1682,10 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef * /* hPcd */, uint8_t ep) {
 	}
 	const uint16_t epMask = uint16_t(1 << uint16_t(epNum));
 	txPendingEp &= uint16_t(~epMask); /* clear bit */
-	if ( recvZlp ) HAL_PCD_EP_Receive(hPcdUsb, USB_ENDPOINT_OUT(0), NULL, 0); /* call last to avoid race condition in handleLowLevelSetup()  */
+	if ( recvZlp ) {
+		/* call last to avoid race condition in handleLowLevelSetup() */
+		HAL_PCD_EP_Receive(hPcdUsb, USB_ENDPOINT_OUT(0), NULL, 0);
+	}
 }
 
 

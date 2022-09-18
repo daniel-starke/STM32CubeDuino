@@ -110,6 +110,7 @@ Special Macros
 |`STM32CUBEDUINO_DISABLE_STRING`       |May be defined by the user to disable the Arduino String class and related functions.
 |`STM32CUBEDUINO_DISABLE_TIMER`        |May be defined by the user to disable hardware timer related STM32CubeDino functions (not PWM).
 |`STM32CUBEDUINO_DISABLE_USB`          |May be defined by the user to disable USB related STM32CubeDino functions.
+|`STM32CUBEDUINO_DISABLE_USB_CDC`      |May be defined by the user to disable USB CDC related STM32CubeDino functions.
 |`NO_GPL`                              |May be defined by the user to exclude GPL licensed code. This affects only support functions included for better Arduino AVR compatibility.
 |`SERIAL_RX_BUFFER_SIZE`               |May be defined by the user to change the serial reception buffer size. Defaults to 64 bytes.
 |`SERIAL_TX_BUFFER_SIZE`               |May be defined by the user to change the serial transmission buffer size. Defaults to 64 bytes.

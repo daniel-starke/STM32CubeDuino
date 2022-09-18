@@ -3,7 +3,7 @@
 # @author Daniel Starke
 # @copyright Copyright 2022 Daniel Starke
 # @date 2022-03-20
-# @version 2022-04-18
+# @version 2022-09-17
 #
 # Running from within the library root directory.
 # The following environment variables are used:
@@ -63,6 +63,7 @@ done <<"_LIST"
 -DSTM32CUBEDUINO_DISABLE_STRING
 -DSTM32CUBEDUINO_DISABLE_TIMER
 -DSTM32CUBEDUINO_DISABLE_USB
+-DSTM32CUBEDUINO_DISABLE_USB_CDC
 _LIST
 
 exit 0

@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2022 Daniel Starke
  * @date 2022-03-17
- * @version 2022-03-17
+ * @version 2022-09-18
  */
 #include <Arduino.h>
 #include <wiring_irq.h>
@@ -11,6 +11,7 @@
 
 /* exported variables */
 HardwareSerial Serial1(USART1, getIrqNumFor(USART1), PA_10, PA_9, 1, 1);
+HardwareSerial Serial2(USART2, getIrqNumFor(USART2), PA_3, PA_2, 1, 1);
 
 
 /**
