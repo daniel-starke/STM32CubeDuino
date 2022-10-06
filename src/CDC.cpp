@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-05-21
- * @version 2022-09-18
+ * @version 2022-10-06
  * 
  * @see https://www.silabs.com/documents/public/application-notes/AN758.pdf
  */
@@ -11,7 +11,7 @@
 #include "util/atomic.h"
 
 
-#if !defined(STM32CUBEDUINO_DISABLE_USB_CDC) && !defined(STM32CUBEDUINO_DISABLE_SERIAL) && defined(PLUGGABLE_USB_ENABLED) && defined(USBCON)
+#if !defined(STM32CUBEDUINO_DISABLE_USB_CDC) && defined(PLUGGABLE_USB_ENABLED) && defined(USBCON)
 #define CDC_ACM_INTERFACE  uint8_t(this->pluggedInterface)     /* CDC ACM (needs to be first) */
 #define CDC_DATA_INTERFACE uint8_t(this->pluggedInterface + 1) /* CDC data */
 #define CDC_ENDPOINT_ACM   uint8_t(this->pluggedEndpoint)      /* needs to be first */
@@ -219,9 +219,7 @@ size_t Serial_::write(const uint8_t * buffer, size_t size) {
  * @return true if CDC is up and running, else false
  */
 Serial_::operator bool() {
-	if ((hostLineState & CDC_LINESTATE_READY) != 0) return true;
-	delay(10);
-	return false;
+	return (hostLineState & CDC_LINESTATE_READY) != 0;
 }
 
 

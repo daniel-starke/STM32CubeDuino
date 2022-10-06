@@ -3,25 +3,12 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-05-12
- * @version 2022-03-11
+ * @version 2022-10-06
  */
 #ifndef __HARDWARESERIAL_H__
 #define __HARDWARESERIAL_H__
 
 #include "scdinternal/fifo.h"
-
-
-#if !defined(STM32CUBEDUINO_DISABLE_SERIAL) && defined(IS_UART_MODE) /* STM32 HAL UART header was included */
-
-
-#ifndef SERIAL_RX_BUFFER_SIZE
-#define SERIAL_RX_BUFFER_SIZE 64
-#endif
-#ifndef SERIAL_TX_BUFFER_SIZE
-#define SERIAL_TX_BUFFER_SIZE 64
-#endif
-typedef typename _FifoIndexTypeFor<SERIAL_RX_BUFFER_SIZE>::type rx_buffer_index_t;
-typedef typename _FifoIndexTypeFor<SERIAL_TX_BUFFER_SIZE>::type tx_buffer_index_t;
 
 
 /* the following defines also apply for the USB CDC driver */
@@ -43,6 +30,19 @@ typedef typename _FifoIndexTypeFor<SERIAL_TX_BUFFER_SIZE>::type tx_buffer_index_
 #define SERIAL_8N2 0x0E
 #define SERIAL_8E2 0x2E
 #define SERIAL_8O2 0x3E
+
+
+#if !defined(STM32CUBEDUINO_DISABLE_SERIAL) && defined(IS_UART_MODE) /* STM32 HAL UART header was included */
+
+
+#ifndef SERIAL_RX_BUFFER_SIZE
+#define SERIAL_RX_BUFFER_SIZE 64
+#endif
+#ifndef SERIAL_TX_BUFFER_SIZE
+#define SERIAL_TX_BUFFER_SIZE 64
+#endif
+typedef typename _FifoIndexTypeFor<SERIAL_RX_BUFFER_SIZE>::type rx_buffer_index_t;
+typedef typename _FifoIndexTypeFor<SERIAL_TX_BUFFER_SIZE>::type tx_buffer_index_t;
 
 
 #define HAVE_HWSERIAL0

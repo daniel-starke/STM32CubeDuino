@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-05-12
- * @version 2022-09-17
+ * @version 2022-10-06
  */
 #include "Arduino.h"
 #include "wiring_irq.h"
@@ -278,22 +278,14 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef * hUart) {
  * @param[in,out] hUart - pointer to UART handle
  */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef * hUart) {
-	/* clear PE flag */
-	if (__HAL_UART_GET_FLAG(hUart, UART_FLAG_PE) != RESET) {
-		__HAL_UART_CLEAR_PEFLAG(hUart);
-	}
-	/* clear FE flag */
-	if (__HAL_UART_GET_FLAG(hUart, UART_FLAG_FE) != RESET) {
-		__HAL_UART_CLEAR_FEFLAG(hUart);
-	}
-	/* clear NE flag */
-	if (__HAL_UART_GET_FLAG(hUart, UART_FLAG_NE) != RESET) {
-		__HAL_UART_CLEAR_NEFLAG(hUart);
-	}
-	/* clear ORE flag */
-	if (__HAL_UART_GET_FLAG(hUart, UART_FLAG_ORE) != RESET) {
-		__HAL_UART_CLEAR_OREFLAG(hUart);
-	}
+	/* clear PE (parity error) flag */
+	__HAL_UART_CLEAR_PEFLAG(hUart);
+	/* clear FE (framing error) flag */
+	__HAL_UART_CLEAR_FEFLAG(hUart);
+	/* clear NE (noise error) flag */
+	__HAL_UART_CLEAR_NEFLAG(hUart);
+	/* clear ORE (overrun error) flag */
+	__HAL_UART_CLEAR_OREFLAG(hUart);
 	/* resume data reception */
 	HardwareSerial * obj = getObjFromMemberPtr(hUart, &HardwareSerial::handle);
 	if (obj == NULL) return;
