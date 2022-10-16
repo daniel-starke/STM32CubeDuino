@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-10-14
- * @version 2022-09-10
+ * @version 2022-10-16
  * 
  * @internal For internal use only.
  */
@@ -375,7 +375,7 @@ struct _TimerPinMap {
 	 * @param[in] hTim - TIM instance as defined by STM32 HAL API
 	 * @return instance number or 0 on error
 	 */
-	static uint32_t getInstanceNumFromId(TIM_TypeDef * hTim);
+	static uint16_t getInstanceNumFromId(TIM_TypeDef * hTim);
 #endif /* TIM_CLOCKPRESCALER_DIV1 */
 	
 #ifdef LPTIM_PRESCALER_DIV1 /* STM32 HAL LPTIM header was included */
@@ -407,7 +407,7 @@ struct _TimerPinMap {
 	 * @param[in] hLpTim - LPTIM instance as defined by STM32 HAL API
 	 * @return instance number 0 on error
 	 */
-	static uint32_t getInstanceNumFromId(LPTIM_TypeDef * hLpTim);
+	static uint16_t getInstanceNumFromId(LPTIM_TypeDef * hLpTim);
 #endif /* LPTIM_PRESCALER_DIV1 */
 
 #ifdef STM32F1

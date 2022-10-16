@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-05-21
- * @version 2022-10-06
+ * @version 2022-10-16
  */
 #ifndef __CDC_H__
 #define __CDC_H__
@@ -74,7 +74,7 @@ public:
 	bool dtr();
 	bool rts();
 
-	inline operator bool();
+	operator bool();
 	
 	using Print::write;
 protected:

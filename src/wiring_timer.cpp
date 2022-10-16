@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-10-21
- * @version 2022-09-16
+ * @version 2022-10-16
  */
 #include "Arduino.h"
 #include "scdinternal/macro.h"
@@ -2589,7 +2589,7 @@ _TimerPinMap::TimHandle * _TimerPinMap::getInternalTimHandleFromId(TIM_TypeDef *
 }
 
 
-uint32_t _TimerPinMap::getInstanceNumFromId(TIM_TypeDef * hTim) {
+uint16_t _TimerPinMap::getInstanceNumFromId(TIM_TypeDef * hTim) {
 	uint8_t res = 0;
 	switch (reinterpret_cast<uintptr_t>(hTim)) {
 #ifdef TIM1
@@ -2666,7 +2666,7 @@ uint32_t _TimerPinMap::getInstanceNumFromId(TIM_TypeDef * hTim) {
 #endif /* TIM24 */
 	default: break;
 	}
-	return uint32_t(res);
+	return uint16_t(res);
 }
 #endif /* TIM_CLOCKPRESCALER_DIV1 */
 
@@ -2700,7 +2700,7 @@ _TimerPinMap::LpTimHandle * _TimerPinMap::getInternalLpTimHandleFromId(LPTIM_Typ
 }
 
 
-uint32_t _TimerPinMap::getInstanceNumFromId(LPTIM_TypeDef * hLpTim) {
+uint16_t _TimerPinMap::getInstanceNumFromId(LPTIM_TypeDef * hLpTim) {
 	uint8_t res = 0;
 	switch (reinterpret_cast<uintptr_t>(hLpTim)) {
 #ifdef LPTIM1
@@ -2720,7 +2720,7 @@ uint32_t _TimerPinMap::getInstanceNumFromId(LPTIM_TypeDef * hLpTim) {
 #endif /* LPTIM5 */
 	default: break;
 	}
-	return uint32_t(res);
+	return uint16_t(res);
 }
 #endif /* LPTIM_PRESCALER_DIV1 */
 
