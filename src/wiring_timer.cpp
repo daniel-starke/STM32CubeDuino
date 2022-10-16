@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-10-21
- * @version 2022-09-11
+ * @version 2022-09-16
  */
 #include "Arduino.h"
 #include "scdinternal/macro.h"
@@ -125,23 +125,6 @@ static inline auto RCC_GetPCLK4ClockFreq_Wrapper_(const float, Ts... args) -> ui
 template <typename ...Ts>
 static inline uint32_t RCC_GetPCLK4ClockFreq_Wrapper(Ts... args) {
 	return RCC_GetPCLK4ClockFreq_Wrapper_(0 /* prefer int here */, args...);
-}
-
-
-/* C++ SFINAE for handling the absence of the RCC_ClkInitTypeDef field APB2CLKDivider */
-template <typename T>
-static inline auto APB2CLKDivider_Wrapper_(const int, T & var) -> decltype(var.APB2CLKDivider) {
-	return var.APB2CLKDivider;
-}
-
-template <typename T>
-static inline auto APB2CLKDivider_Wrapper_(const float, T &) -> uint32_t {
-	return RCC_HCLK_DIV1; /* fallback value */
-}
-
-template <typename T>
-static inline uint32_t APB2CLKDivider_Wrapper(T & var) {
-	return APB2CLKDivider_Wrapper_(0 /* prefer int here */, var);
 }
 
 
@@ -2435,15 +2418,23 @@ uint32_t _TimerPinMap::getTimerClockFrequency(const _TimerPinMap::ClockSource cl
 	if (clkSrc != ClockSource_PCLK1 && clkSrc != ClockSource_PCLK2) {
 		return freq;
 	}
-	/* PCLK has a multiplier of 2 for any prescaler >1. Account for it here. */
-	RCC_ClkInitTypeDef rccClk;
-	uint32_t dummy;
-	HAL_RCC_GetClockConfig(&rccClk, &dummy);
-	if (clkSrc == ClockSource_PCLK1) {
-		return (rccClk.APB1CLKDivider == RCC_HCLK_DIV1) ? freq : freq * 2;
-	} else {
-		return (APB2CLKDivider_Wrapper(rccClk) == RCC_HCLK_DIV1) ? freq : freq * 2;
+	/* The PCLK based timer clock has a multiplier of 1, 2 or 4 up until HCLK. Account for it here. */
+#if defined(RCC_DCKCFGR_TIMPRE) /* STM32F4 */
+	const uint32_t maxMul = (READ_BIT(RCC->DCKCFGR, RCC_DCKCFGR_TIMPRE)) ? 4 : 2;
+#elif defined(RCC_DCKCFGR1_TIMPRE) /* STM32F7 */
+	const uint32_t maxMul = (READ_BIT(RCC->DCKCFGR1, RCC_DCKCFGR1_TIMPRE)) ? 4 : 2;
+#elif defined(RCC_CFGR_TIMPRE) /* STM32H7 */
+	const uint32_t maxMul = (READ_BIT(RCC->CFGR, RCC_CFGR_TIMPRE)) ? 4 : 2;
+#else
+	const uint32_t maxMul = 2;
+#endif
+	const uint32_t hClk = HAL_RCC_GetHCLKFreq();
+	if (maxMul == 4 && (freq * 4) <= hClk) {
+		return freq * 4;
+	} else if ((freq * 2) <= hClk) {
+		return freq * 2;
 	}
+	return freq;
 }
 
 

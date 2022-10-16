@@ -240,7 +240,7 @@ int32_t Serial_::readBreak() {
 
 
 /**
- * Returns the current baud rate configuraion.
+ * Returns the current baud rate configuration.
  * 
  * @return baud rate
  */
