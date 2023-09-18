@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2019-2022 Daniel Starke
  * @date 2019-03-26
- * @version 2022-03-28
+ * @version 2023-05-02
  */
 #include <stdio.h>
 #include <string.h>
@@ -416,6 +416,11 @@ void ser_delete(tSerial * ser) {
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/select.h>
+
+
+#ifndef TIOCM_LE
+#define TIOCM_LE TIOCM_DSR
+#endif
 
 
 /**
