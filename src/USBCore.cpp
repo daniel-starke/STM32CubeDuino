@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-05-21
- * @version 2022-09-18
+ * @version 2023-09-18
  * 
  * Control Endpoint:
  * @verbatim
@@ -155,6 +155,7 @@
 
 
 /* Timeout for sends and receives. */
+#define USB_WFI_TIMEOUT_MS 1000
 #define USB_IO_TIMEOUT_MS 70
 #define PP_CAT(x, y) x##y
 #ifdef __thumb__
@@ -410,7 +411,11 @@ static bool sendOrBlock(const uint8_t ep, const void * data, const uint32_t len,
 	HAL_PCD_EP_Transmit(hPcdUsb, ep, bufferPtrEp[epIdx], USB_IO_TX_CHUNK(len));
 	if ( blocking ) {
 		/* wait until the transmission completed */
-		while ((txPendingEp & epMask) != 0) __WFI();
+		const uint32_t startTime = millis();
+		while ((txPendingEp & epMask) != 0) {
+			__WFI();
+			if (uint32_t(millis() - startTime) >= USB_WFI_TIMEOUT_MS) break;
+		}
 	}
 	return true;
 }
@@ -486,6 +491,7 @@ static uint32_t sendHelper(const uint8_t flags, const uint32_t ep, const void * 
 			__DMB(); __DSB(); __ISB(); /* data and instruction barrier */
 			const uint8_t * dataBuf = reinterpret_cast<const uint8_t *>(data);
 			for (uint32_t i = 0; i < len; dataBuf++, i++) {
+				const uint32_t startTime = millis();
 				while ( ! buf.fifo.push(((flags & TRANSFER_ZERO) == 0) ? *dataBuf : 0) ) {
 					if ((txPendingEp & epMask) == 0) {
 						/* trigger send in case something clogged up */
@@ -493,9 +499,16 @@ static uint32_t sendHelper(const uint8_t flags, const uint32_t ep, const void * 
 						break;
 					}
 					__WFI();
+					if (uint32_t(millis() - startTime) >= USB_WFI_TIMEOUT_MS) {
+						/* interface got stuck -> reattach it */
+						USBDevice.detach();
+						USBDevice.attach();
+						return i;
+					}
 				}
 			}
 			if ((flags & TRANSFER_RELEASE) != 0) {
+				const uint32_t startTime = millis();
 				while ( ! buf.fifo.commitBlock() ) {
 					if ((txPendingEp & epMask) == 0) {
 						/* trigger send in case something clogged up */
@@ -503,6 +516,12 @@ static uint32_t sendHelper(const uint8_t flags, const uint32_t ep, const void * 
 						break;
 					}
 					__WFI();
+					if (uint32_t(millis() - startTime) >= USB_WFI_TIMEOUT_MS) {
+						/* interface got stuck -> reattach it */
+						USBDevice.detach();
+						USBDevice.attach();
+						return len;
+					}
 				}
 			}
 		} else {
@@ -574,7 +593,11 @@ static bool recvOrFail(const uint8_t ep, void * data, const uint32_t len, const 
 	HAL_PCD_EP_Receive(hPcdUsb, ep, reinterpret_cast<uint8_t *>(data), len);
 	if ( blocking ) {
 		/* wait until the reception completed */
-		while ((rxPendingEp & epMask) != 0) __WFI();
+		const uint32_t startTime = millis();
+		while ((rxPendingEp & epMask) != 0) {
+			__WFI();
+			if (uint32_t(millis() - startTime) >= USB_WFI_TIMEOUT_MS) break;
+		}
 	}
 	return true;
 }
@@ -1197,7 +1220,6 @@ void USBDeviceClass::flush(uint32_t ep) {
 		bytesPendingEp[0] = 0;
 		bytesPendingEp[1] = 0;
 	} else {
-		
 		bool canWait = false;
 		const bool interruptsEnabled = ((__get_PRIMASK() & 0x1) == 0);
 		if ( interruptsEnabled ) {
@@ -1219,9 +1241,17 @@ void USBDeviceClass::flush(uint32_t ep) {
 					usbTriggerSend(buf, epNum, false);
 				}
 			}
-			while ((txPendingEp & epMask) != 0) __WFI();
+			const uint32_t startTime = millis();
+			while ((txPendingEp & epMask) != 0) {
+				__WFI();
+				if (uint32_t(millis() - startTime) >= USB_WFI_TIMEOUT_MS) break;
+			}
 		} else {
-			while ((rxPendingEp & epMask) != 0) __WFI();
+			const uint32_t startTime = millis();
+			while ((rxPendingEp & epMask) != 0) {
+				__WFI();
+				if (uint32_t(millis() - startTime) >= USB_WFI_TIMEOUT_MS) break;
+			}
 		}
 	}
 }
