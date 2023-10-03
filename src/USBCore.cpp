@@ -3,7 +3,7 @@
  * @author Daniel Starke
  * @copyright Copyright 2020-2022 Daniel Starke
  * @date 2020-05-21
- * @version 2023-09-18
+ * @version 2023-09-25
  * 
  * Control Endpoint:
  * @verbatim
@@ -817,7 +817,7 @@ bool USBDeviceClass::handleStandardSetup(USBSetup & setup) {
 	case SET_CONFIGURATION:
 		if ((setup.bmRequestType & REQUEST_RECIPIENT) == REQUEST_DEVICE) {
 			this->initEndpoints();
-			_usbConfiguration = setup.wValueL;
+			_usbConfiguration = setup.wValueL; /* bConfigurationValue */
 			this->sendZlp(0);
 		} else {
 			return false;
@@ -879,18 +879,18 @@ bool USBDeviceClass::sendDescriptor(USBSetup & setup) {
 		case ISERIAL:
 			{
 				char name[ISERIAL_MAX_LEN] = {0};
-				uint8_t idx = 0;
+				uint8_t len = 0;
 #ifdef UID_BASE
 				const uint32_t * uidPtr = reinterpret_cast<const uint32_t *>(UID_BASE);
 				const uint32_t uid = uidPtr[0] ^ uidPtr[1] ^ uidPtr[2];
-				for (; idx < 8; idx++) {
-					name[idx] = "0123456789ABCDEF"[(uid >> (4 * idx)) & 0xF];
+				for (; len < 8; len++) {
+					name[len] = "0123456789ABCDEF"[(uid >> (4 * len)) & 0xF];
 				}
 #endif /* UID_BASE */
 #ifdef PLUGGABLE_USB_ENABLED
-				idx = uint8_t(idx + PluggableUSB().getShortName(name + idx));
+				len = uint8_t(len + PluggableUSB().getShortName(name + len));
 #endif /* PLUGGABLE_USB_ENABLED */
-				if (idx > 0) {
+				if (len > 0) {
 					return this->sendStringDescriptor(reinterpret_cast<const uint8_t *>(name), setup.wLength);
 				}
 			}
@@ -986,7 +986,7 @@ bool USBDeviceClass::sendConfiguration(uint32_t maxLen) {
 bool USBDeviceClass::sendStringDescriptor(const uint8_t * string, uint32_t maxLen) {
 	if (maxLen < 2) return false;
 	if (maxLen == 2) {
-		ctrlStatBuf[0] = 0; /* bLength */
+		ctrlStatBuf[0] = 2; /* bLength */
 		ctrlStatBuf[1] = 0x03; /* bDescriptorType: String */
 		this->sendControl(ctrlStatBuf, 2);
 		return true;
